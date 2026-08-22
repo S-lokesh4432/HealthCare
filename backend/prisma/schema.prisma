@@ -1,0 +1,188 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  PATIENT
+  DOCTOR
+  ADMIN
+}
+
+enum AppointmentStatus {
+  HELD
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+  EXPIRED
+}
+
+enum Urgency {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum NotificationType {
+  BOOKING_CONFIRMATION
+  REMINDER
+  CANCELLATION
+  LEAVE_NOTICE
+  MEDICATION_REMINDER
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  PERMANENTLY_FAILED
+}
+
+enum SummaryStatus {
+  OK
+  DEGRADED
+  FAILED
+}
+
+model User {
+  id                  String               @id @default(cuid())
+  email               String               @unique
+  passwordHash        String
+  role                Role
+  name                String
+  phone               String?
+  createdAt           DateTime             @default(now())
+  doctorProfile       DoctorProfile?
+  patientAppointments Appointment[]        @relation("PatientAppointments")
+  calendarConnection  CalendarConnection?
+  notificationLogs    NotificationLog[]
+}
+
+model DoctorProfile {
+  id                  String        @id @default(cuid())
+  userId              String        @unique
+  user                User          @relation(fields: [userId], references: [id])
+  specialization      String
+  bio                 String?
+  slotDurationMinutes Int           @default(30)
+  workingHours        WorkingHour[]
+  leaves              Leave[]
+  appointments        Appointment[] @relation("DoctorAppointments")
+}
+
+model WorkingHour {
+  id        String        @id @default(cuid())
+  doctorId  String
+  doctor    DoctorProfile @relation(fields: [doctorId], references: [id])
+  dayOfWeek Int
+  startTime String
+  endTime   String
+
+  @@unique([doctorId, dayOfWeek])
+}
+
+model Leave {
+  id       String        @id @default(cuid())
+  doctorId String
+  doctor   DoctorProfile @relation(fields: [doctorId], references: [id])
+  date     DateTime      @db.Date
+  reason   String?
+
+  @@unique([doctorId, date])
+}
+
+model Appointment {
+  id            String            @id @default(cuid())
+  doctorId      String
+  doctor        DoctorProfile     @relation("DoctorAppointments", fields: [doctorId], references: [id])
+  patientId     String
+  patient       User              @relation("PatientAppointments", fields: [patientId], references: [id])
+  date          DateTime          @db.Date
+  startTime     String
+  endTime       String
+  status        AppointmentStatus @default(HELD)
+  holdExpiresAt DateTime?
+
+  symptomText     String?
+  preVisitSummary Json?
+  preVisitStatus  SummaryStatus?
+
+  postVisitNotes   String?
+  postVisitSummary Json?
+  postVisitStatus  SummaryStatus?
+
+  prescriptions  Prescription[]
+  calendarEvents CalendarEvent[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([doctorId, date])
+  @@index([patientId])
+}
+
+model Prescription {
+  id              String               @id @default(cuid())
+  appointmentId   String
+  appointment     Appointment          @relation(fields: [appointmentId], references: [id])
+  medicationName  String
+  dosage          String
+  frequencyPerDay Int
+  durationDays    Int
+  instructions    String?
+  reminders       MedicationReminder[]
+}
+
+model MedicationReminder {
+  id             String             @id @default(cuid())
+  prescriptionId String
+  prescription   Prescription       @relation(fields: [prescriptionId], references: [id])
+  patientId      String
+  scheduledAt    DateTime
+  status         NotificationStatus @default(PENDING)
+  sentAt         DateTime?
+
+  @@index([status, scheduledAt])
+}
+
+model NotificationLog {
+  id          String             @id @default(cuid())
+  userId      String
+  user        User               @relation(fields: [userId], references: [id])
+  type        NotificationType
+  recipient   String
+  subject     String
+  status      NotificationStatus @default(PENDING)
+  retryCount  Int                @default(0)
+  maxRetries  Int                @default(5)
+  nextRetryAt DateTime?
+  lastError   String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([status, nextRetryAt])
+}
+
+model CalendarConnection {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id])
+  accessTokenEnc   String
+  refreshTokenEnc  String
+  expiresAt        DateTime
+  googleCalendarId String   @default("primary")
+}
+
+model CalendarEvent {
+  id            String      @id @default(cuid())
+  appointmentId String
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  userId        String
+  googleEventId String
+  status        String      @default("ACTIVE")
+}
