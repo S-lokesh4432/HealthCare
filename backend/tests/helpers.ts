@@ -86,4 +86,51 @@ export async function cleanupDoctor(doctorProfileId: string) {
   await prisma.appointment.deleteMany({ where: { doctorId: doctorProfileId } });
   await prisma.leave.deleteMany({ where: { doctorId: doctorProfileId } });
   await prisma.workingHour.deleteMany({ where: { doctorId: doctorProfileId } });
+
+  // The profile and its user must go too, or every run leaves another
+  // "Test Specialization" doctor behind that shows up in the real UI.
+  const profile = await prisma.doctorProfile.findUnique({
+    where: { id: doctorProfileId },
+    select: { userId: true },
+  });
+  if (!profile) return;
+
+  await prisma.doctorProfile.delete({ where: { id: doctorProfileId } });
+  await prisma.notificationLog.deleteMany({ where: { userId: profile.userId } });
+  await prisma.calendarConnection.deleteMany({ where: { userId: profile.userId } });
+  await prisma.user.delete({ where: { id: profile.userId } });
+}
+
+/**
+ * Removes every @test.local account and everything hanging off it, doctors
+ * included, so a test run never leaves rows behind that show up in the real UI.
+ */
+export async function cleanupTestUsers() {
+  const users = await prisma.user.findMany({
+    where: { email: { endsWith: '@test.local' } },
+    select: { id: true, doctorProfile: { select: { id: true } } },
+  });
+  if (users.length === 0) return;
+
+  const userIds = users.map((u) => u.id);
+  const profileIds = users.flatMap((u) => (u.doctorProfile ? [u.doctorProfile.id] : []));
+
+  const appointments = await prisma.appointment.findMany({
+    where: { OR: [{ patientId: { in: userIds } }, { doctorId: { in: profileIds } }] },
+    select: { id: true },
+  });
+  const apptIds = appointments.map((a) => a.id);
+
+  await prisma.medicationReminder.deleteMany({
+    where: { prescription: { appointmentId: { in: apptIds } } },
+  });
+  await prisma.prescription.deleteMany({ where: { appointmentId: { in: apptIds } } });
+  await prisma.calendarEvent.deleteMany({ where: { appointmentId: { in: apptIds } } });
+  await prisma.appointment.deleteMany({ where: { id: { in: apptIds } } });
+  await prisma.leave.deleteMany({ where: { doctorId: { in: profileIds } } });
+  await prisma.workingHour.deleteMany({ where: { doctorId: { in: profileIds } } });
+  await prisma.doctorProfile.deleteMany({ where: { id: { in: profileIds } } });
+  await prisma.notificationLog.deleteMany({ where: { userId: { in: userIds } } });
+  await prisma.calendarConnection.deleteMany({ where: { userId: { in: userIds } } });
+  await prisma.user.deleteMany({ where: { id: { in: userIds } } });
 }
