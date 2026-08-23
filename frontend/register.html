@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Register - Clinic</title>
+  <link href="assets/img/favicon.png" rel="icon">
+  <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="assets/css/main.css" rel="stylesheet">
+</head>
+<body>
+  <header class="header fixed-top" style="position:relative">
+    <div class="branding d-flex align-items-center py-3">
+      <div class="container d-flex align-items-center justify-content-between">
+        <a href="index.html" class="logo d-flex align-items-center"><h1 class="sitename">Clinic</h1></a>
+        <nav><a href="index.html" class="me-3">Home</a></nav>
+        <div id="portal-nav" class="d-flex align-items-center"></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="py-5" style="margin-top:80px">
+    <div class="container" style="max-width:420px">
+      <h2 class="mb-4">Create a patient account</h2>
+      <p class="text-muted small">Doctor and admin accounts are created by an administrator.</p>
+      <div id="alert-box"></div>
+      <form id="register-form">
+        <div class="mb-3">
+          <label class="form-label">Full name</label>
+          <input type="text" class="form-control" name="name" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-control" name="email" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Phone (optional)</label>
+          <input type="tel" class="form-control" name="phone">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Password (min 8 characters)</label>
+          <input type="password" class="form-control" name="password" minlength="8" required>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Register</button>
+      </form>
+      <p class="mt-3 text-center">Already have an account? <a href="login.html">Log in</a></p>
+    </div>
+  </main>
+
+  <script src="assets/js/api.js"></script>
+  <script>
+    renderNav();
+
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const alertBox = document.getElementById('alert-box');
+      alertBox.innerHTML = '';
+      const form = new FormData(e.target);
+      const payload = { name: form.get('name'), email: form.get('email'), password: form.get('password') };
+      if (form.get('phone')) payload.phone = form.get('phone');
+
+      try {
+        const { token, user } = await api('/api/auth/register', { method: 'POST', body: JSON.stringify(payload) });
+        setSession(token, user);
+        window.location.href = 'dashboard-patient.html';
+      } catch (err) {
+        showAlert(alertBox, err.message);
+      }
+    });
+  </script>
+</body>
+</html>

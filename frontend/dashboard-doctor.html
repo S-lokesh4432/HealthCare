@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Doctor Dashboard - Clinic</title>
+  <link href="assets/img/favicon.png" rel="icon">
+  <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="assets/css/main.css" rel="stylesheet">
+</head>
+<body>
+  <header class="header fixed-top" style="position:relative">
+    <div class="branding d-flex align-items-center py-3">
+      <div class="container d-flex align-items-center justify-content-between">
+        <a href="index.html" class="logo d-flex align-items-center"><h1 class="sitename">Clinic</h1></a>
+        <nav></nav>
+        <div id="portal-nav" class="d-flex align-items-center"></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="py-5" style="margin-top:80px">
+    <div class="container" style="max-width:900px">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>My appointments</h2>
+        <button id="calendar-btn" class="btn btn-sm btn-outline-secondary">Connect Google Calendar</button>
+      </div>
+      <div id="alert-box"></div>
+      <div id="list"></div>
+    </div>
+  </main>
+
+  <!-- Notes modal -->
+  <div class="modal fade" id="notesModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Post-visit notes</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div id="modal-alert"></div>
+          <textarea id="notes-text" class="form-control mb-3" rows="4" placeholder="Clinical notes for this visit..."></textarea>
+          <div id="rx-rows"></div>
+          <button type="button" id="add-rx" class="btn btn-sm btn-outline-primary mb-3">+ Add prescription</button>
+        </div>
+        <div class="modal-footer">
+          <button id="submit-notes" class="btn btn-primary">Save & generate summary</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary review modal -->
+  <div class="modal fade" id="summaryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Review AI patient summary before sending</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div id="summary-modal-alert"></div>
+          <label class="form-label">Summary text (editable)</label>
+          <textarea id="summary-text" class="form-control mb-3" rows="4"></textarea>
+          <label class="form-label">Follow-up steps (one per line)</label>
+          <textarea id="summary-followup" class="form-control mb-3" rows="3"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button id="save-summary" class="btn btn-outline-primary">Save edits</button>
+          <button id="send-summary" class="btn btn-primary">Send to patient</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script>
+    requireRole('DOCTOR');
+    renderNav();
+    const alertBox = document.getElementById('alert-box');
+    let currentAppointmentId = null;
+    let currentSummary = null;
+
+    function statusBadge(status) {
+      const map = { CONFIRMED: 'primary', HELD: 'warning', CANCELLED: 'secondary', COMPLETED: 'success', NO_SHOW: 'dark', EXPIRED: 'secondary' };
+      return `<span class="badge bg-${map[status] || 'secondary'}">${status}</span>`;
+    }
+    function urgencyBadge(u) {
+      const map = { High: 'danger', Medium: 'warning', Low: 'success' };
+      return `<span class="badge bg-${map[u] || 'secondary'}">${u} urgency</span>`;
+    }
+
+    async function load() {
+      const appointments = await api('/api/appointments/mine');
+      const list = document.getElementById('list');
+      if (appointments.length === 0) {
+        list.innerHTML = '<p class="text-muted">No appointments yet.</p>';
+        return;
+      }
+
+      list.innerHTML = appointments.map((a) => `
+        <div class="card mb-3">
+          <div class="card-body">
+            <div class="d-flex justify-content-between">
+              <h5>${escapeHtml(a.patient.name)}</h5>
+              ${statusBadge(a.status)}
+            </div>
+            <p class="mb-1">${escapeHtml(a.date)} at ${escapeHtml(a.startTime)}</p>
+            ${a.preVisitStatus === 'FAILED'
+              ? '<div class="alert alert-warning py-1 px-2">AI summary unavailable — review symptoms manually below.</div>'
+              : a.preVisitSummary
+                ? `<div class="mb-2">${urgencyBadge(a.preVisitSummary.urgency)} ${escapeHtml(a.preVisitSummary.chiefComplaint)}</div>`
+                : ''}
+            ${a.symptomText ? `<p class="small text-muted">Patient-reported: ${escapeHtml(a.symptomText)}</p>` : ''}
+            ${a.status === 'CONFIRMED' ? `<button class="btn btn-sm btn-primary" onclick="openNotes('${a.id}')">Add visit notes</button>` : ''}
+            ${a.status === 'COMPLETED' && a.postVisitSummary ? `<button class="btn btn-sm btn-outline-primary" onclick='openSummary("${a.id}", ${JSON.stringify(a.postVisitSummary).replace(/'/g, "&apos;")})'>Review AI summary</button>` : ''}
+            ${a.status === 'COMPLETED' && a.postVisitStatus === 'FAILED' ? '<div class="alert alert-warning py-1 px-2 mt-2">Post-visit AI summary unavailable — write one manually via Review.</div>' : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function addRxRow() {
+      const wrap = document.getElementById('rx-rows');
+      const row = document.createElement('div');
+      row.className = 'row g-2 mb-2 rx-row';
+      row.innerHTML = `
+        <div class="col-3"><input class="form-control form-control-sm" placeholder="Medication" data-f="medicationName"></div>
+        <div class="col-2"><input class="form-control form-control-sm" placeholder="Dosage" data-f="dosage"></div>
+        <div class="col-2"><input type="number" min="1" max="6" class="form-control form-control-sm" placeholder="x/day" data-f="frequencyPerDay"></div>
+        <div class="col-2"><input type="number" min="1" max="365" class="form-control form-control-sm" placeholder="Days" data-f="durationDays"></div>
+        <div class="col-3"><input class="form-control form-control-sm" placeholder="Instructions" data-f="instructions"></div>`;
+      wrap.appendChild(row);
+    }
+    document.getElementById('add-rx').addEventListener('click', addRxRow);
+
+    function openNotes(id) {
+      currentAppointmentId = id;
+      document.getElementById('notes-text').value = '';
+      document.getElementById('rx-rows').innerHTML = '';
+      document.getElementById('modal-alert').innerHTML = '';
+      new bootstrap.Modal(document.getElementById('notesModal')).show();
+    }
+
+    document.getElementById('submit-notes').addEventListener('click', async () => {
+      const modalAlert = document.getElementById('modal-alert');
+      const postVisitNotes = document.getElementById('notes-text').value.trim();
+      if (postVisitNotes.length < 3) return showAlert(modalAlert, 'Please write at least a few words of notes.');
+
+      const prescriptions = [...document.querySelectorAll('.rx-row')].map((row) => {
+        const get = (f) => row.querySelector(`[data-f="${f}"]`).value;
+        return {
+          medicationName: get('medicationName'),
+          dosage: get('dosage'),
+          frequencyPerDay: Number(get('frequencyPerDay')) || 1,
+          durationDays: Number(get('durationDays')) || 1,
+          instructions: get('instructions') || undefined,
+        };
+      }).filter((rx) => rx.medicationName && rx.dosage);
+
+      try {
+        const result = await api(`/api/appointments/${currentAppointmentId}/notes`, {
+          method: 'POST',
+          body: JSON.stringify({ postVisitNotes, prescriptions }),
+        });
+        bootstrap.Modal.getInstance(document.getElementById('notesModal')).hide();
+        if (result.postVisitStatus === 'FAILED') {
+          showAlert(alertBox, 'Visit saved. AI summary unavailable — please write the patient summary manually via "Review AI summary".', 'warning');
+        }
+        load();
+      } catch (err) {
+        showAlert(modalAlert, err.message);
+      }
+    });
+
+    function openSummary(id, summary) {
+      currentAppointmentId = id;
+      currentSummary = summary;
+      document.getElementById('summary-modal-alert').innerHTML = '';
+      document.getElementById('summary-text').value = summary?.summary || '';
+      document.getElementById('summary-followup').value = (summary?.medicationSchedule || [])
+        .map((m) => `${m.medication}: ${m.schedule}`).join('\n') || '';
+      document.getElementById('summary-followup').value = (summary?.followUpSteps || []).join('\n');
+      new bootstrap.Modal(document.getElementById('summaryModal')).show();
+    }
+    window.openSummary = openSummary;
+    window.openNotes = openNotes;
+
+    function collectSummaryEdits() {
+      return {
+        summary: document.getElementById('summary-text').value.trim(),
+        medicationSchedule: currentSummary?.medicationSchedule || [],
+        followUpSteps: document.getElementById('summary-followup').value.split('\n').map((s) => s.trim()).filter(Boolean),
+      };
+    }
+
+    document.getElementById('save-summary').addEventListener('click', async () => {
+      const modalAlert = document.getElementById('summary-modal-alert');
+      try {
+        await api(`/api/appointments/${currentAppointmentId}/summary`, { method: 'PATCH', body: JSON.stringify(collectSummaryEdits()) });
+        showAlert(modalAlert, 'Saved.', 'success');
+        load();
+      } catch (err) {
+        showAlert(modalAlert, err.message);
+      }
+    });
+
+    document.getElementById('send-summary').addEventListener('click', async () => {
+      const modalAlert = document.getElementById('summary-modal-alert');
+      try {
+        await api(`/api/appointments/${currentAppointmentId}/summary`, { method: 'PATCH', body: JSON.stringify(collectSummaryEdits()) });
+        const result = await api(`/api/appointments/${currentAppointmentId}/summary/send`, { method: 'POST' });
+        showAlert(modalAlert, result.sent ? 'Sent to patient.' : `Could not send: ${result.error}`, result.sent ? 'success' : 'warning');
+      } catch (err) {
+        showAlert(modalAlert, err.message);
+      }
+    });
+
+    document.getElementById('calendar-btn').addEventListener('click', async () => {
+      try {
+        const { url } = await api('/api/calendar/connect');
+        window.open(url, '_blank');
+      } catch (err) {
+        showAlert(alertBox, err.message);
+      }
+    });
+
+    load().catch((err) => showAlert(alertBox, err.message));
+  </script>
+</body>
+</html>

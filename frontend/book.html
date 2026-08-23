@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Book Appointment - Clinic</title>
+  <link href="assets/img/favicon.png" rel="icon">
+  <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="assets/css/main.css" rel="stylesheet">
+  <style>.slot-btn.selected{background:var(--accent-color);color:#fff}</style>
+</head>
+<body>
+  <header class="header fixed-top" style="position:relative">
+    <div class="branding d-flex align-items-center py-3">
+      <div class="container d-flex align-items-center justify-content-between">
+        <a href="index.html" class="logo d-flex align-items-center"><h1 class="sitename">Clinic</h1></a>
+        <nav><a href="index.html" class="me-3">Home</a></nav>
+        <div id="portal-nav" class="d-flex align-items-center"></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="py-5" style="margin-top:80px">
+    <div class="container" style="max-width:640px">
+      <h2 class="mb-4">Book an appointment</h2>
+      <div id="alert-box"></div>
+
+      <div id="step-pick">
+        <div class="mb-3">
+          <label class="form-label">Specialization</label>
+          <select id="specialization" class="form-select"><option value="">All</option></select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Doctor</label>
+          <select id="doctor" class="form-select"><option value="">Select a doctor</option></select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Date</label>
+          <input type="date" id="date" class="form-control">
+        </div>
+        <button id="load-slots" class="btn btn-outline-primary">Show available slots</button>
+
+        <div id="slots-wrap" class="mt-4"></div>
+      </div>
+
+      <div id="step-symptoms" class="d-none">
+        <hr class="my-4">
+        <h4>Tell us your symptoms</h4>
+        <p class="text-muted small">This goes to an AI intake assistant that gives your doctor a quick summary before your visit. It does not diagnose you.</p>
+        <div id="hold-timer" class="alert alert-warning"></div>
+        <textarea id="symptom-text" class="form-control mb-3" rows="4" placeholder="Describe what's been going on, when it started, severity..." minlength="3" required></textarea>
+        <button id="confirm-btn" class="btn btn-primary">Confirm appointment</button>
+        <button id="cancel-hold-btn" class="btn btn-link text-danger">Cancel</button>
+      </div>
+
+      <div id="step-done" class="d-none">
+        <hr class="my-4">
+        <div class="alert alert-success">Appointment confirmed.</div>
+        <div id="summary-box"></div>
+        <a href="dashboard-patient.html" class="btn btn-primary mt-3">Go to my appointments</a>
+      </div>
+    </div>
+  </main>
+
+  <script src="assets/js/api.js"></script>
+  <script>
+    requireRole('PATIENT');
+    renderNav();
+
+    const alertBox = document.getElementById('alert-box');
+    const specSelect = document.getElementById('specialization');
+    const doctorSelect = document.getElementById('doctor');
+    const dateInput = document.getElementById('date');
+    const slotsWrap = document.getElementById('slots-wrap');
+    let doctors = [];
+    let heldAppointment = null;
+    let holdTimerInterval = null;
+
+    const todayPlus = (days) => {
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      return d.toISOString().slice(0, 10);
+    };
+    dateInput.min = todayPlus(0);
+    dateInput.value = todayPlus(1);
+
+    async function loadDoctors() {
+      doctors = await api('/api/doctors');
+      const specs = [...new Set(doctors.map((d) => d.specialization))].sort();
+      specSelect.innerHTML = '<option value="">All</option>' + specs.map((s) => `<option>${escapeHtml(s)}</option>`).join('');
+      renderDoctorOptions();
+    }
+
+    function renderDoctorOptions() {
+      const filtered = specSelect.value ? doctors.filter((d) => d.specialization === specSelect.value) : doctors;
+      doctorSelect.innerHTML = '<option value="">Select a doctor</option>' +
+        filtered.map((d) => `<option value="${d.id}">${escapeHtml(d.name)} — ${escapeHtml(d.specialization)}</option>`).join('');
+    }
+    specSelect.addEventListener('change', renderDoctorOptions);
+
+    document.getElementById('load-slots').addEventListener('click', async () => {
+      alertBox.innerHTML = '';
+      slotsWrap.innerHTML = '';
+      if (!doctorSelect.value || !dateInput.value) {
+        return showAlert(alertBox, 'Pick a doctor and a date first.');
+      }
+      try {
+        const result = await api(`/api/doctors/${doctorSelect.value}/availability?date=${dateInput.value}`);
+        if (result.onLeave) {
+          slotsWrap.innerHTML = `<div class="alert alert-info">The doctor is on leave that day${result.leaveReason ? `: ${escapeHtml(result.leaveReason)}` : ''}.</div>`;
+        } else if (result.slots.length === 0) {
+          slotsWrap.innerHTML = '<div class="alert alert-info">No open slots that day.</div>';
+        } else {
+          slotsWrap.innerHTML = '<div class="d-flex flex-wrap gap-2">' +
+            result.slots.map((s) => `<button type="button" class="btn btn-outline-primary slot-btn" data-time="${s.startTime}">${s.startTime}</button>`).join('') +
+            '</div>';
+          slotsWrap.querySelectorAll('.slot-btn').forEach((btn) => btn.addEventListener('click', () => holdSlot(btn.dataset.time)));
+        }
+      } catch (err) {
+        showAlert(alertBox, err.message);
+      }
+    });
+
+    async function holdSlot(startTime) {
+      alertBox.innerHTML = '';
+      try {
+        heldAppointment = await api('/api/appointments/hold', {
+          method: 'POST',
+          body: JSON.stringify({ doctorId: doctorSelect.value, date: dateInput.value, startTime }),
+        });
+        document.getElementById('step-pick').classList.add('d-none');
+        document.getElementById('step-symptoms').classList.remove('d-none');
+        startHoldTimer();
+      } catch (err) {
+        showAlert(alertBox, err.message);
+      }
+    }
+
+    function startHoldTimer() {
+      const timerBox = document.getElementById('hold-timer');
+      clearInterval(holdTimerInterval);
+      holdTimerInterval = setInterval(() => {
+        const msLeft = new Date(heldAppointment.holdExpiresAt).getTime() - Date.now();
+        if (msLeft <= 0) {
+          clearInterval(holdTimerInterval);
+          timerBox.textContent = 'Your hold expired. Please pick a slot again.';
+          timerBox.className = 'alert alert-danger';
+          document.getElementById('confirm-btn').disabled = true;
+          return;
+        }
+        const mins = Math.floor(msLeft / 60000);
+        const secs = Math.floor((msLeft % 60000) / 1000);
+        timerBox.textContent = `Slot held for you: ${mins}:${String(secs).padStart(2, '0')} remaining`;
+      }, 1000);
+    }
+
+    document.getElementById('cancel-hold-btn').addEventListener('click', async () => {
+      if (heldAppointment) await api(`/api/appointments/${heldAppointment.id}/cancel`, { method: 'POST' }).catch(() => {});
+      window.location.reload();
+    });
+
+    document.getElementById('confirm-btn').addEventListener('click', async () => {
+      alertBox.innerHTML = '';
+      const symptomText = document.getElementById('symptom-text').value.trim();
+      if (symptomText.length < 3) return showAlert(alertBox, 'Please describe your symptoms.');
+
+      try {
+        const result = await api(`/api/appointments/${heldAppointment.id}/confirm`, {
+          method: 'POST',
+          body: JSON.stringify({ symptomText }),
+        });
+        clearInterval(holdTimerInterval);
+        document.getElementById('step-symptoms').classList.add('d-none');
+        document.getElementById('step-done').classList.remove('d-none');
+
+        const summaryBox = document.getElementById('summary-box');
+        if (result.preVisitStatus === 'FAILED') {
+          summaryBox.innerHTML = '<div class="alert alert-warning">AI summary unavailable — please review symptoms manually with your doctor.</div>';
+        } else {
+          const s = result.preVisitSummary;
+          const badge = result.preVisitStatus === 'DEGRADED' ? ' <span class="badge bg-secondary">fallback AI provider used</span>' : '';
+          summaryBox.innerHTML = `<div class="card"><div class="card-body">
+            <h5>Urgency: ${escapeHtml(s.urgency)}${badge}</h5>
+            <p>${escapeHtml(s.chiefComplaint)}</p>
+            <strong>Questions to bring up:</strong>
+            <ul>${s.suggestedQuestions.map((q) => `<li>${escapeHtml(q)}</li>`).join('')}</ul>
+          </div></div>`;
+        }
+        if (!result.notifications.emailSent) {
+          summaryBox.innerHTML += `<div class="alert alert-warning mt-2">Confirmation email could not be sent (${escapeHtml(result.notifications.emailError || 'unknown error')}). Your booking is still confirmed.</div>`;
+        }
+      } catch (err) {
+        showAlert(alertBox, err.message);
+      }
+    });
+
+    loadDoctors().catch((err) => showAlert(alertBox, err.message));
+  </script>
+</body>
+</html>

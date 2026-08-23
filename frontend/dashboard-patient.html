@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>My Appointments - Clinic</title>
+  <link href="assets/img/favicon.png" rel="icon">
+  <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="assets/css/main.css" rel="stylesheet">
+</head>
+<body>
+  <header class="header fixed-top" style="position:relative">
+    <div class="branding d-flex align-items-center py-3">
+      <div class="container d-flex align-items-center justify-content-between">
+        <a href="index.html" class="logo d-flex align-items-center"><h1 class="sitename">Clinic</h1></a>
+        <nav><a href="book.html" class="me-3">Book Appointment</a></nav>
+        <div id="portal-nav" class="d-flex align-items-center"></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="py-5" style="margin-top:80px">
+    <div class="container" style="max-width:820px">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>My appointments</h2>
+        <button id="calendar-btn" class="btn btn-sm btn-outline-secondary">Connect Google Calendar</button>
+      </div>
+      <div id="alert-box"></div>
+      <div id="list"></div>
+    </div>
+  </main>
+
+  <script src="assets/js/api.js"></script>
+  <script>
+    requireRole('PATIENT');
+    renderNav();
+    const alertBox = document.getElementById('alert-box');
+
+    function statusBadge(status) {
+      const map = { CONFIRMED: 'primary', HELD: 'warning', CANCELLED: 'secondary', COMPLETED: 'success', NO_SHOW: 'dark', EXPIRED: 'secondary' };
+      return `<span class="badge bg-${map[status] || 'secondary'}">${status}</span>`;
+    }
+
+    async function load() {
+      const appointments = await api('/api/appointments/mine');
+      const list = document.getElementById('list');
+      if (appointments.length === 0) {
+        list.innerHTML = '<p class="text-muted">No appointments yet. <a href="book.html">Book one</a>.</p>';
+        return;
+      }
+
+      list.innerHTML = appointments.map((a) => `
+        <div class="card mb-3">
+          <div class="card-body">
+            <div class="d-flex justify-content-between">
+              <h5>${escapeHtml(a.doctorName)} — ${escapeHtml(a.doctor.specialization)}</h5>
+              ${statusBadge(a.status)}
+            </div>
+            <p class="mb-1">${escapeHtml(a.date)} at ${escapeHtml(a.startTime)}</p>
+            ${a.preVisitStatus === 'FAILED' ? '<p class="text-warning small">AI summary unavailable for this visit.</p>' : ''}
+            ${a.postVisitStatus === 'FAILED' ? '<p class="text-warning small">Post-visit summary unavailable — ask your doctor for details.</p>' : ''}
+            ${a.postVisitSummary ? `<div class="alert alert-light border mt-2 mb-0"><strong>Visit summary:</strong> ${escapeHtml(a.postVisitSummary.summary)}</div>` : ''}
+            ${a.status === 'CONFIRMED' ? `<button class="btn btn-sm btn-outline-danger mt-2" onclick="cancelAppointment('${a.id}')">Cancel</button>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function cancelAppointment(id) {
+      if (!confirm('Cancel this appointment?')) return;
+      try {
+        await api(`/api/appointments/${id}/cancel`, { method: 'POST' });
+        load();
+      } catch (err) {
+        showAlert(alertBox, err.message);
+      }
+    }
+
+    document.getElementById('calendar-btn').addEventListener('click', async () => {
+      try {
+        const { url } = await api('/api/calendar/connect');
+        window.open(url, '_blank');
+      } catch (err) {
+        showAlert(alertBox, err.message);
+      }
+    });
+
+    load().catch((err) => showAlert(alertBox, err.message));
+  </script>
+</body>
+</html>
