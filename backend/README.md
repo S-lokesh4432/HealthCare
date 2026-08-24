@@ -77,6 +77,17 @@ Resend key, `sendEmail` writes a `FAILED` `NotificationLog` row with the real
 error and the booking still succeeds. With no Google credentials, calendar
 creation returns `skipped: "NOT_CONFIGURED"` and the booking still succeeds.
 
+## Deploying to Vercel + Neon
+
+Use Neon's **pooled** connection string (the one with `-pooler` in the
+hostname) for `DATABASE_URL`, and the direct one for `DIRECT_URL` (Prisma
+needs a direct connection for migrations, pgbouncer's transaction pooling
+mode doesn't support them). Each serverless invocation can open its own
+connection; without pooling, moderate concurrent traffic exhausts Postgres's
+connection limit. If you still see connection errors under load, add
+`?connection_limit=1` to `DATABASE_URL` — the documented fix for Prisma
+on serverless.
+
 ## Google Calendar setup
 
 1. console.cloud.google.com → new project → enable "Google Calendar API".
