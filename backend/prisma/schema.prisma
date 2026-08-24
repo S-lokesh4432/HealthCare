@@ -157,6 +157,8 @@ model NotificationLog {
   type        NotificationType
   recipient   String
   subject     String
+  bodyHtml    String
+  bodyText    String
   status      NotificationStatus @default(PENDING)
   retryCount  Int                @default(0)
   maxRetries  Int                @default(5)
