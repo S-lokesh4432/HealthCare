@@ -5,67 +5,98 @@
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
   <title>Register - Clinic</title>
   <link href="assets/img/favicon.png" rel="icon">
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
   <link href="assets/css/main.css" rel="stylesheet">
+  <link href="assets/css/portal.css" rel="stylesheet">
 </head>
-<body>
-  <header class="header fixed-top" style="position:relative">
-    <div class="branding d-flex align-items-center py-3">
-      <div class="container d-flex align-items-center justify-content-between">
-        <a href="index.html" class="logo d-flex align-items-center"><h1 class="sitename">Clinic</h1></a>
-        <nav><a href="index.html" class="me-3">Home</a></nav>
-        <div id="portal-nav" class="d-flex align-items-center"></div>
-      </div>
-    </div>
-  </header>
+<body class="portal-body">
+  <div id="portal-nav"></div>
 
-  <main class="py-5" style="margin-top:80px">
-    <div class="container" style="max-width:420px">
-      <h2 class="mb-4">Create a patient account</h2>
-      <p class="text-muted small">Doctor and admin accounts are created by an administrator.</p>
-      <div id="alert-box"></div>
-      <form id="register-form">
-        <div class="mb-3">
-          <label class="form-label">Full name</label>
-          <input type="text" class="form-control" name="name" required>
+  <main>
+    <div class="container portal-auth-wrap">
+      <div class="portal-auth">
+        <div class="portal-card">
+          <div class="portal-card-body">
+            <div class="portal-auth-icon"><i class="bi bi-person-plus-fill"></i></div>
+            <h2 class="portal-card-title mb-1" style="font-size:23px">Create your account</h2>
+            <p class="portal-meta mb-4">Book appointments and track your care in one place.</p>
+
+            <div id="alert-box"></div>
+
+            <form id="register-form" novalidate>
+              <div class="mb-3">
+                <label class="portal-label d-block">Full name</label>
+                <input type="text" class="form-control" name="name" placeholder="Jane Doe" required autocomplete="name">
+              </div>
+              <div class="mb-3">
+                <label class="portal-label d-block">Email address</label>
+                <input type="email" class="form-control" name="email" placeholder="you@example.com" required autocomplete="email">
+              </div>
+              <div class="mb-3">
+                <label class="portal-label d-block">Phone <span class="portal-meta fw-normal">(optional)</span></label>
+                <input type="tel" class="form-control" name="phone" placeholder="+1 555 000 1234" autocomplete="tel">
+              </div>
+              <div class="mb-4">
+                <label class="portal-label d-block">Password</label>
+                <input type="password" class="form-control" name="password" placeholder="At least 8 characters" minlength="8" required autocomplete="new-password">
+                <div class="portal-meta mt-1" style="font-size:12.5px">Minimum 8 characters.</div>
+              </div>
+              <button type="submit" class="btn btn-primary w-100" id="register-btn">
+                <i class="bi bi-check2-circle me-1"></i> Create account
+              </button>
+            </form>
+
+            <p class="text-center portal-meta mt-4 mb-0">
+              Already registered? <a href="login.html" class="fw-semibold">Log in</a>
+            </p>
+          </div>
         </div>
-        <div class="mb-3">
-          <label class="form-label">Email</label>
-          <input type="email" class="form-control" name="email" required>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Phone (optional)</label>
-          <input type="tel" class="form-control" name="phone">
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Password (min 8 characters)</label>
-          <input type="password" class="form-control" name="password" minlength="8" required>
-        </div>
-        <button type="submit" class="btn btn-primary w-100">Register</button>
-      </form>
-      <p class="mt-3 text-center">Already have an account? <a href="login.html">Log in</a></p>
+
+        <p class="portal-meta text-center mt-3 mb-0" style="font-size:13px">
+          <i class="bi bi-shield-check me-1"></i>
+          Doctor and admin accounts are created by clinic staff.
+        </p>
+      </div>
     </div>
   </main>
 
   <script src="assets/js/config.js"></script>
   <script src="assets/js/api.js"></script>
+  <script src="assets/js/portal.js"></script>
   <script>
-    renderNav();
+    renderPortalNav();
 
     document.getElementById('register-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const alertBox = document.getElementById('alert-box');
+      const btn = document.getElementById('register-btn');
       alertBox.innerHTML = '';
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating…';
+
       const form = new FormData(e.target);
-      const payload = { name: form.get('name'), email: form.get('email'), password: form.get('password') };
+      const payload = {
+        name: form.get('name'),
+        email: form.get('email'),
+        password: form.get('password'),
+      };
       if (form.get('phone')) payload.phone = form.get('phone');
 
       try {
-        const { token, user } = await api('/api/auth/register', { method: 'POST', body: JSON.stringify(payload) });
+        const { token, user } = await api('/api/auth/register', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
         setSession(token, user);
         window.location.href = 'dashboard-patient.html';
       } catch (err) {
         showAlert(alertBox, err.message);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> Create account';
       }
     });
   </script>

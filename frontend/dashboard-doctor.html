@@ -5,68 +5,86 @@
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
   <title>Doctor Dashboard - Clinic</title>
   <link href="assets/img/favicon.png" rel="icon">
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
   <link href="assets/css/main.css" rel="stylesheet">
+  <link href="assets/css/portal.css" rel="stylesheet">
 </head>
-<body>
-  <header class="header fixed-top" style="position:relative">
-    <div class="branding d-flex align-items-center py-3">
-      <div class="container d-flex align-items-center justify-content-between">
-        <a href="index.html" class="logo d-flex align-items-center"><h1 class="sitename">Clinic</h1></a>
-        <nav></nav>
-        <div id="portal-nav" class="d-flex align-items-center"></div>
-      </div>
-    </div>
-  </header>
+<body class="portal-body">
+  <div id="portal-nav"></div>
+  <div id="heading"></div>
 
-  <main class="py-5" style="margin-top:80px">
+  <main class="portal-main">
     <div class="container" style="max-width:900px">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>My appointments</h2>
-        <button id="calendar-btn" class="btn btn-sm btn-outline-secondary">Connect Google Calendar</button>
-      </div>
       <div id="alert-box"></div>
+      <div id="stats" class="portal-stats d-none"></div>
       <div id="list"></div>
     </div>
   </main>
 
-  <!-- Notes modal -->
+  <!-- Visit notes -->
   <div class="modal fade" id="notesModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header"><h5 class="modal-title">Post-visit notes</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content" style="border-radius:var(--portal-radius)">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title portal-card-title"><i class="bi bi-pencil-square me-2 text-primary"></i>Record visit</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
         <div class="modal-body">
           <div id="modal-alert"></div>
-          <textarea id="notes-text" class="form-control mb-3" rows="4" placeholder="Clinical notes for this visit..."></textarea>
+          <div id="notes-patient" class="ai-block mb-3"></div>
+
+          <label class="portal-label d-block">Clinical notes</label>
+          <textarea id="notes-text" class="form-control mb-4" rows="4"
+            placeholder="Findings, diagnosis, advice given…"></textarea>
+
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <label class="portal-label mb-0">Prescriptions</label>
+            <button type="button" id="add-rx" class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-plus-lg me-1"></i>Add medication
+            </button>
+          </div>
           <div id="rx-rows"></div>
-          <button type="button" id="add-rx" class="btn btn-sm btn-outline-primary mb-3">+ Add prescription</button>
+          <p class="portal-meta mb-0" style="font-size:13px">
+            <i class="bi bi-info-circle"></i>Reminders are scheduled automatically from frequency × duration.
+          </p>
         </div>
-        <div class="modal-footer">
-          <button id="submit-notes" class="btn btn-primary">Save & generate summary</button>
+        <div class="modal-footer border-0 pt-0">
+          <button id="submit-notes" class="btn btn-primary">
+            <i class="bi bi-stars me-1"></i>Save &amp; generate patient summary
+          </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Summary review modal -->
+  <!-- Summary review -->
   <div class="modal fade" id="summaryModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header"><h5 class="modal-title">Review AI patient summary before sending</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content" style="border-radius:var(--portal-radius)">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title portal-card-title"><i class="bi bi-shield-check me-2 text-primary"></i>Review before sending</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
         <div class="modal-body">
           <div id="summary-modal-alert"></div>
-          <label class="form-label">Summary text (editable)</label>
+          <p class="portal-meta">Edit anything below — nothing reaches the patient until you send it.</p>
+
+          <label class="portal-label d-block">Summary</label>
           <textarea id="summary-text" class="form-control mb-3" rows="4"></textarea>
-          <label class="form-label">Medication schedule (one "drug: schedule" per line)</label>
+
+          <label class="portal-label d-block">Medication schedule <span class="portal-meta fw-normal">(one “drug: schedule” per line)</span></label>
           <textarea id="summary-medication" class="form-control mb-3" rows="3"></textarea>
-          <label class="form-label">Follow-up steps (one per line)</label>
-          <textarea id="summary-followup" class="form-control mb-3" rows="3"></textarea>
+
+          <label class="portal-label d-block">Follow-up steps <span class="portal-meta fw-normal">(one per line)</span></label>
+          <textarea id="summary-followup" class="form-control" rows="3"></textarea>
         </div>
-        <div class="modal-footer">
-          <button id="save-summary" class="btn btn-outline-primary">Save edits</button>
-          <button id="send-summary" class="btn btn-primary">Send to patient</button>
+        <div class="modal-footer border-0 pt-0">
+          <button id="save-summary" class="btn btn-outline-primary">Save draft</button>
+          <button id="send-summary" class="btn btn-primary"><i class="bi bi-send me-1"></i>Send to patient</button>
         </div>
       </div>
     </div>
@@ -75,160 +93,223 @@
   <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script src="assets/js/config.js"></script>
   <script src="assets/js/api.js"></script>
+  <script src="assets/js/portal.js"></script>
   <script>
-    requireRole('DOCTOR');
-    renderNav();
+    const user = requireRole('DOCTOR');
+    renderPortalNav();
+    document.getElementById('heading').innerHTML = pageHeading(
+      `Dr. ${cleanName(user.name).replace(/^Dr\.?\s*/i, '')}`,
+      'Your schedule, patient intake summaries and visit records.',
+      `<button id="calendar-btn" class="btn btn-outline-light"><i class="bi bi-calendar-plus me-1"></i> Google Calendar</button>`
+    );
+
     const alertBox = document.getElementById('alert-box');
-    let currentAppointmentId = null;
+    const listEl = document.getElementById('list');
+    const byId = new Map();
+    let currentId = null;
 
-    function statusBadge(status) {
-      const map = { CONFIRMED: 'primary', HELD: 'warning', CANCELLED: 'secondary', COMPLETED: 'success', NO_SHOW: 'dark', EXPIRED: 'secondary' };
-      return `<span class="badge bg-${map[status] || 'secondary'}">${status}</span>`;
-    }
-    function urgencyBadge(u) {
-      const map = { High: 'danger', Medium: 'warning', Low: 'success' };
-      return `<span class="badge bg-${map[u] || 'secondary'}">${u} urgency</span>`;
-    }
+    function card(a) {
+      const pre = a.preVisitSummary;
+      return `<div class="portal-card portal-card-hover">
+        <div class="portal-card-body">
+          <div class="d-flex align-items-start gap-3">
+            ${avatar(a.patient.name, 'portal-avatar-lg')}
+            <div class="flex-grow-1 min-w-0">
+              <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <div>
+                  <h3 class="portal-card-title">${escapeHtml(cleanName(a.patient.name))}</h3>
+                  <div class="portal-meta">${escapeHtml(a.patient.email)}</div>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                  ${pre?.urgency ? urgencyPill(pre.urgency) : ''}
+                  ${statusPill(a.status)}
+                </div>
+              </div>
 
-    const appointmentsById = new Map();
+              <div class="portal-meta mt-2">
+                <i class="bi bi-calendar3"></i>${prettyDate(a.date)}
+                <span class="ms-3"><i class="bi bi-clock"></i>${prettyTime(a.startTime)} – ${prettyTime(a.endTime)}</span>
+              </div>
+
+              ${a.preVisitStatus === 'FAILED'
+                ? `<div class="ai-unavailable mt-3"><i class="bi bi-exclamation-triangle me-1"></i>AI intake summary unavailable — read the patient's own words below.</div>`
+                : pre ? `<div class="ai-block mt-3">
+                    <h6><i class="bi bi-stars me-1"></i>AI intake summary</h6>
+                    <p class="mb-2" style="font-size:14.5px"><strong>${escapeHtml(pre.chiefComplaint)}</strong></p>
+                    <ul>${(pre.suggestedQuestions || []).map((q) => `<li>${escapeHtml(q)}</li>`).join('')}</ul>
+                  </div>` : ''}
+
+              ${a.symptomText ? `<p class="portal-meta mt-3 mb-0" style="font-size:14px">
+                <i class="bi bi-chat-quote"></i><em>“${escapeHtml(a.symptomText)}”</em></p>` : ''}
+
+              ${a.postVisitStatus === 'FAILED'
+                ? `<div class="ai-unavailable mt-3"><i class="bi bi-exclamation-triangle me-1"></i>Patient summary could not be generated — write one manually via Review.</div>` : ''}
+
+              <div class="d-flex gap-2 mt-3 flex-wrap">
+                ${a.status === 'CONFIRMED' ? `<button class="btn btn-sm btn-primary" data-notes="${a.id}"><i class="bi bi-pencil-square me-1"></i>Record visit</button>` : ''}
+                ${a.status === 'COMPLETED' ? `<button class="btn btn-sm btn-outline-primary" data-summary="${a.id}"><i class="bi bi-shield-check me-1"></i>Review &amp; send summary</button>` : ''}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }
 
     async function load() {
-      const appointments = await api('/api/appointments/mine');
-      appointmentsById.clear();
-      appointments.forEach((a) => appointmentsById.set(a.id, a));
+      listEl.innerHTML = skeletonCards(2);
+      const all = await api('/api/appointments/mine');
+      byId.clear();
+      all.forEach((a) => byId.set(a.id, a));
 
-      const list = document.getElementById('list');
-      if (appointments.length === 0) {
-        list.innerHTML = '<p class="text-muted">No appointments yet.</p>';
+      if (all.length === 0) {
+        document.getElementById('stats').classList.add('d-none');
+        listEl.innerHTML = emptyState('bi-calendar3', 'No appointments booked with you yet.');
         return;
       }
 
-      list.innerHTML = appointments.map((a) => `
-        <div class="card mb-3">
-          <div class="card-body">
-            <div class="d-flex justify-content-between">
-              <h5>${escapeHtml(a.patient.name)}</h5>
-              ${statusBadge(a.status)}
-            </div>
-            <p class="mb-1">${escapeHtml(a.date)} at ${escapeHtml(a.startTime)}</p>
-            ${a.preVisitStatus === 'FAILED'
-              ? '<div class="alert alert-warning py-1 px-2">AI summary unavailable — review symptoms manually below.</div>'
-              : a.preVisitSummary
-                ? `<div class="mb-2">${urgencyBadge(a.preVisitSummary.urgency)} ${escapeHtml(a.preVisitSummary.chiefComplaint)}</div>`
-                : ''}
-            ${a.symptomText ? `<p class="small text-muted">Patient-reported: ${escapeHtml(a.symptomText)}</p>` : ''}
-            ${a.status === 'CONFIRMED' ? `<button class="btn btn-sm btn-primary" onclick="openNotes('${a.id}')">Add visit notes</button>` : ''}
-            ${a.status === 'COMPLETED' && a.postVisitSummary ? `<button class="btn btn-sm btn-outline-primary" onclick="openSummary('${a.id}')">Review AI summary</button>` : ''}
-            ${a.status === 'COMPLETED' && a.postVisitStatus === 'FAILED' ? '<div class="alert alert-warning py-1 px-2 mt-2">Post-visit AI summary unavailable — write one manually via Review.</div>' : ''}
-          </div>
-        </div>
-      `).join('');
+      const upcoming = all.filter((a) => ['CONFIRMED', 'HELD'].includes(a.status));
+      const highUrgency = all.filter((a) => a.preVisitSummary?.urgency === 'High' && a.status === 'CONFIRMED');
+
+      document.getElementById('stats').classList.remove('d-none');
+      document.getElementById('stats').innerHTML = [
+        ['bi-calendar-check', upcoming.length, 'Upcoming', '#e8f1ff', '#1450a8'],
+        ['bi-exclamation-triangle', highUrgency.length, 'High urgency', '#fdeaea', '#a5241f'],
+        ['bi-clipboard2-check', all.filter((a) => a.status === 'COMPLETED').length, 'Completed', '#e4f7ee', '#10714a'],
+      ].map(([icon, value, label, bg, fg]) => `
+        <div class="portal-stat d-flex align-items-center gap-3">
+          <div class="portal-stat-icon" style="background:${bg};color:${fg}"><i class="bi ${icon}"></i></div>
+          <div><div class="portal-stat-value">${value}</div><div class="portal-stat-label">${label}</div></div>
+        </div>`).join('');
+
+      const past = all.filter((a) => !['CONFIRMED', 'HELD'].includes(a.status));
+      const sub = (t) => `<h2 class="portal-card-title mb-3" style="font-size:15px;text-transform:uppercase;letter-spacing:.5px;color:var(--portal-muted)">${t}</h2>`;
+      listEl.innerHTML =
+        (upcoming.length ? sub('Upcoming') + upcoming.map(card).join('') : '') +
+        (past.length ? sub('Past visits').replace('mb-3', 'mb-3 mt-4') + past.map(card).join('') : '');
+
+      listEl.querySelectorAll('[data-notes]').forEach((b) => b.addEventListener('click', () => openNotes(b.dataset.notes)));
+      listEl.querySelectorAll('[data-summary]').forEach((b) => b.addEventListener('click', () => openSummary(b.dataset.summary)));
     }
 
     function addRxRow() {
-      const wrap = document.getElementById('rx-rows');
       const row = document.createElement('div');
-      row.className = 'row g-2 mb-2 rx-row';
+      row.className = 'row g-2 mb-2 rx-row align-items-center';
       row.innerHTML = `
-        <div class="col-3"><input class="form-control form-control-sm" placeholder="Medication" data-f="medicationName"></div>
-        <div class="col-2"><input class="form-control form-control-sm" placeholder="Dosage" data-f="dosage"></div>
-        <div class="col-2"><input type="number" min="1" max="6" class="form-control form-control-sm" placeholder="x/day" data-f="frequencyPerDay"></div>
-        <div class="col-2"><input type="number" min="1" max="365" class="form-control form-control-sm" placeholder="Days" data-f="durationDays"></div>
-        <div class="col-3"><input class="form-control form-control-sm" placeholder="Instructions" data-f="instructions"></div>`;
-      wrap.appendChild(row);
+        <div class="col-md-3"><input class="form-control form-control-sm" placeholder="Medication" data-f="medicationName"></div>
+        <div class="col-md-2"><input class="form-control form-control-sm" placeholder="500mg" data-f="dosage"></div>
+        <div class="col-md-2"><input type="number" min="1" max="6" value="3" class="form-control form-control-sm" placeholder="per day" data-f="frequencyPerDay"></div>
+        <div class="col-md-2"><input type="number" min="1" max="365" value="5" class="form-control form-control-sm" placeholder="days" data-f="durationDays"></div>
+        <div class="col-md-2"><input class="form-control form-control-sm" placeholder="With food" data-f="instructions"></div>
+        <div class="col-md-1 text-end"><button type="button" class="btn btn-sm btn-link text-danger p-1 rx-remove"><i class="bi bi-trash"></i></button></div>`;
+      row.querySelector('.rx-remove').addEventListener('click', () => row.remove());
+      document.getElementById('rx-rows').appendChild(row);
     }
     document.getElementById('add-rx').addEventListener('click', addRxRow);
 
     function openNotes(id) {
-      currentAppointmentId = id;
+      const a = byId.get(id);
+      currentId = id;
       document.getElementById('notes-text').value = '';
       document.getElementById('rx-rows').innerHTML = '';
       document.getElementById('modal-alert').innerHTML = '';
+      document.getElementById('notes-patient').innerHTML = `
+        <div class="d-flex align-items-center gap-3">
+          ${avatar(a.patient.name)}
+          <div>
+            <div class="fw-semibold">${escapeHtml(cleanName(a.patient.name))}</div>
+            <div class="portal-meta">${prettyDate(a.date)} · ${prettyTime(a.startTime)}</div>
+          </div>
+        </div>`;
       new bootstrap.Modal(document.getElementById('notesModal')).show();
     }
 
     document.getElementById('submit-notes').addEventListener('click', async () => {
       const modalAlert = document.getElementById('modal-alert');
       const postVisitNotes = document.getElementById('notes-text').value.trim();
-      if (postVisitNotes.length < 3) return showAlert(modalAlert, 'Please write at least a few words of notes.');
+      if (postVisitNotes.length < 3) return showAlert(modalAlert, 'Please add a few words of clinical notes.');
 
       const prescriptions = [...document.querySelectorAll('.rx-row')].map((row) => {
-        const get = (f) => row.querySelector(`[data-f="${f}"]`).value;
+        const g = (f) => row.querySelector(`[data-f="${f}"]`).value;
         return {
-          medicationName: get('medicationName'),
-          dosage: get('dosage'),
-          frequencyPerDay: Number(get('frequencyPerDay')) || 1,
-          durationDays: Number(get('durationDays')) || 1,
-          instructions: get('instructions') || undefined,
+          medicationName: g('medicationName'),
+          dosage: g('dosage'),
+          frequencyPerDay: Number(g('frequencyPerDay')) || 1,
+          durationDays: Number(g('durationDays')) || 1,
+          instructions: g('instructions') || undefined,
         };
       }).filter((rx) => rx.medicationName && rx.dosage);
 
+      const btn = document.getElementById('submit-notes');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating summary…';
+
       try {
-        const result = await api(`/api/appointments/${currentAppointmentId}/notes`, {
+        const result = await api(`/api/appointments/${currentId}/notes`, {
           method: 'POST',
           body: JSON.stringify({ postVisitNotes, prescriptions }),
         });
         bootstrap.Modal.getInstance(document.getElementById('notesModal')).hide();
         if (result.postVisitStatus === 'FAILED') {
-          showAlert(alertBox, 'Visit saved. AI summary unavailable — please write the patient summary manually via "Review AI summary".', 'warning');
+          showAlert(alertBox, 'Visit saved, but the AI summary could not be generated — please write one via “Review & send summary”.', 'warning');
         }
-        load();
+        await load();
       } catch (err) {
         showAlert(modalAlert, err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-stars me-1"></i>Save &amp; generate patient summary';
       }
     });
 
     function openSummary(id) {
-      const appointment = appointmentsById.get(id);
-      const summary = appointment?.postVisitSummary;
-      currentAppointmentId = id;
-      currentSummary = summary;
+      currentId = id;
+      const s = byId.get(id)?.postVisitSummary;
       document.getElementById('summary-modal-alert').innerHTML = '';
-      document.getElementById('summary-text').value = summary?.summary || '';
-      document.getElementById('summary-medication').value = (summary?.medicationSchedule || [])
-        .map((m) => `${m.medication}: ${m.schedule}`).join('\n');
-      document.getElementById('summary-followup').value = (summary?.followUpSteps || []).join('\n');
+      document.getElementById('summary-text').value = s?.summary || '';
+      document.getElementById('summary-medication').value =
+        (s?.medicationSchedule || []).map((m) => `${m.medication}: ${m.schedule}`).join('\n');
+      document.getElementById('summary-followup').value = (s?.followUpSteps || []).join('\n');
       new bootstrap.Modal(document.getElementById('summaryModal')).show();
     }
-    window.openSummary = openSummary;
-    window.openNotes = openNotes;
 
-    function collectSummaryEdits() {
-      const medicationSchedule = document.getElementById('summary-medication').value
-        .split('\n')
-        .map((line) => line.trim())
-        .filter(Boolean)
-        .map((line) => {
-          const [medication, ...rest] = line.split(':');
-          return { medication: medication.trim(), schedule: rest.join(':').trim() || medication.trim() };
-        });
-
+    function collectEdits() {
       return {
         summary: document.getElementById('summary-text').value.trim(),
-        medicationSchedule,
-        followUpSteps: document.getElementById('summary-followup').value.split('\n').map((s) => s.trim()).filter(Boolean),
+        medicationSchedule: document.getElementById('summary-medication').value
+          .split('\n').map((l) => l.trim()).filter(Boolean)
+          .map((line) => {
+            const [med, ...rest] = line.split(':');
+            return { medication: med.trim(), schedule: rest.join(':').trim() || med.trim() };
+          }),
+        followUpSteps: document.getElementById('summary-followup').value
+          .split('\n').map((s) => s.trim()).filter(Boolean),
       };
     }
 
     document.getElementById('save-summary').addEventListener('click', async () => {
-      const modalAlert = document.getElementById('summary-modal-alert');
+      const a = document.getElementById('summary-modal-alert');
       try {
-        await api(`/api/appointments/${currentAppointmentId}/summary`, { method: 'PATCH', body: JSON.stringify(collectSummaryEdits()) });
-        showAlert(modalAlert, 'Saved.', 'success');
-        load();
-      } catch (err) {
-        showAlert(modalAlert, err.message);
-      }
+        await api(`/api/appointments/${currentId}/summary`, { method: 'PATCH', body: JSON.stringify(collectEdits()) });
+        showAlert(a, 'Draft saved.', 'success');
+        await load();
+      } catch (err) { showAlert(a, err.message); }
     });
 
     document.getElementById('send-summary').addEventListener('click', async () => {
-      const modalAlert = document.getElementById('summary-modal-alert');
+      const a = document.getElementById('summary-modal-alert');
+      const btn = document.getElementById('send-summary');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sending…';
       try {
-        await api(`/api/appointments/${currentAppointmentId}/summary`, { method: 'PATCH', body: JSON.stringify(collectSummaryEdits()) });
-        const result = await api(`/api/appointments/${currentAppointmentId}/summary/send`, { method: 'POST' });
-        showAlert(modalAlert, result.sent ? 'Sent to patient.' : `Could not send: ${result.error}`, result.sent ? 'success' : 'warning');
+        await api(`/api/appointments/${currentId}/summary`, { method: 'PATCH', body: JSON.stringify(collectEdits()) });
+        const r = await api(`/api/appointments/${currentId}/summary/send`, { method: 'POST' });
+        showAlert(a, r.sent ? 'Summary sent to the patient.' : `Saved, but delivery failed: ${r.error}`, r.sent ? 'success' : 'warning');
+        await load();
       } catch (err) {
-        showAlert(modalAlert, err.message);
+        showAlert(a, err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-send me-1"></i>Send to patient';
       }
     });
 
@@ -236,12 +317,10 @@
       try {
         const { url } = await api('/api/calendar/connect');
         window.open(url, '_blank');
-      } catch (err) {
-        showAlert(alertBox, err.message);
-      }
+      } catch (err) { showAlert(alertBox, err.message); }
     });
 
-    load().catch((err) => showAlert(alertBox, err.message));
+    load().catch((err) => { listEl.innerHTML = ''; showAlert(alertBox, err.message); });
   </script>
 </body>
 </html>

@@ -5,68 +5,112 @@
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
   <title>Log In - Clinic</title>
   <link href="assets/img/favicon.png" rel="icon">
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
   <link href="assets/css/main.css" rel="stylesheet">
+  <link href="assets/css/portal.css" rel="stylesheet">
 </head>
-<body>
-  <header class="header fixed-top" style="position:relative">
-    <div class="branding d-flex align-items-center py-3">
-      <div class="container d-flex align-items-center justify-content-between">
-        <a href="index.html" class="logo d-flex align-items-center"><h1 class="sitename">Clinic</h1></a>
-        <nav>
-          <a href="index.html" class="me-3">Home</a>
-          <a href="book.html" class="me-3">Book Appointment</a>
-        </nav>
-        <div id="portal-nav" class="d-flex align-items-center"></div>
-      </div>
-    </div>
-  </header>
+<body class="portal-body">
+  <div id="portal-nav"></div>
 
-  <main class="py-5" style="margin-top:80px">
-    <div class="container" style="max-width:420px">
-      <h2 class="mb-4">Log in</h2>
-      <div id="alert-box"></div>
-      <form id="login-form">
-        <div class="mb-3">
-          <label class="form-label">Email</label>
-          <input type="email" class="form-control" name="email" required>
+  <main>
+    <div class="container portal-auth-wrap">
+      <div class="portal-auth">
+        <div class="portal-card">
+          <div class="portal-card-body">
+            <div class="portal-auth-icon"><i class="bi bi-heart-pulse-fill"></i></div>
+            <h2 class="portal-card-title mb-1" style="font-size:23px">Welcome back</h2>
+            <p class="portal-meta mb-4">Sign in to manage your appointments.</p>
+
+            <div id="alert-box"></div>
+
+            <form id="login-form" novalidate>
+              <div class="mb-3">
+                <label class="portal-label d-block">Email address</label>
+                <input type="email" class="form-control" name="email" placeholder="you@example.com" required autocomplete="email">
+              </div>
+              <div class="mb-4">
+                <label class="portal-label d-block">Password</label>
+                <input type="password" class="form-control" name="password" placeholder="••••••••" required autocomplete="current-password">
+              </div>
+              <button type="submit" class="btn btn-primary w-100" id="login-btn">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Log in
+              </button>
+            </form>
+
+            <p class="text-center portal-meta mt-4 mb-0">
+              New patient? <a href="register.html" class="fw-semibold">Create an account</a>
+            </p>
+          </div>
         </div>
-        <div class="mb-3">
-          <label class="form-label">Password</label>
-          <input type="password" class="form-control" name="password" required>
+
+        <div class="portal-card mt-3">
+          <div class="portal-card-body py-3">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <i class="bi bi-info-circle text-primary"></i>
+              <strong style="font-size:14px">Demo accounts</strong>
+              <span class="portal-pill pill-grey ms-auto">password: Demo@1234</span>
+            </div>
+            <div class="d-grid gap-1" id="demo-list"></div>
+          </div>
         </div>
-        <button type="submit" class="btn btn-primary w-100">Log in</button>
-      </form>
-      <p class="mt-3 text-center">No account? <a href="register.html">Register</a></p>
-      <div class="mt-4 p-3 bg-light rounded small">
-        <strong>Demo accounts</strong> (password <code>Demo@1234</code>):<br>
-        admin@demo.local &middot; dr.patel@demo.local &middot; dr.khan@demo.local &middot; dr.reyes@demo.local
       </div>
     </div>
   </main>
 
   <script src="assets/js/config.js"></script>
   <script src="assets/js/api.js"></script>
+  <script src="assets/js/portal.js"></script>
   <script>
-    renderNav();
+    renderPortalNav();
+
+    const DEMOS = [
+      { email: 'admin@demo.local', label: 'Admin', icon: 'bi-shield-lock' },
+      { email: 'dr.patel@demo.local', label: 'Cardiology', icon: 'bi-heart-pulse' },
+      { email: 'dr.khan@demo.local', label: 'Dermatology', icon: 'bi-bandaid' },
+      { email: 'dr.reyes@demo.local', label: 'Pediatrics', icon: 'bi-emoji-smile' },
+    ];
+
+    document.getElementById('demo-list').innerHTML = DEMOS.map((d) => `
+      <button type="button" class="btn btn-sm btn-light text-start d-flex align-items-center gap-2 fill-demo" data-email="${d.email}">
+        <i class="bi ${d.icon} text-primary"></i>
+        <span class="flex-grow-1">${d.email}</span>
+        <span class="portal-meta">${d.label}</span>
+      </button>`).join('');
+
+    document.querySelectorAll('.fill-demo').forEach((btn) => btn.addEventListener('click', () => {
+      document.querySelector('[name=email]').value = btn.dataset.email;
+      document.querySelector('[name=password]').value = 'Demo@1234';
+      document.querySelector('[name=password]').focus();
+    }));
 
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const alertBox = document.getElementById('alert-box');
+      const btn = document.getElementById('login-btn');
       alertBox.innerHTML = '';
-      const form = new FormData(e.target);
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Signing in…';
 
+      const form = new FormData(e.target);
       try {
         const { token, user } = await api('/api/auth/login', {
           method: 'POST',
           body: JSON.stringify({ email: form.get('email'), password: form.get('password') }),
         });
         setSession(token, user);
-        const dest = { PATIENT: 'dashboard-patient.html', DOCTOR: 'dashboard-doctor.html', ADMIN: 'dashboard-admin.html' }[user.role];
-        window.location.href = dest;
+        window.location.href = {
+          PATIENT: 'dashboard-patient.html',
+          DOCTOR: 'dashboard-doctor.html',
+          ADMIN: 'dashboard-admin.html',
+        }[user.role];
       } catch (err) {
         showAlert(alertBox, err.message);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-box-arrow-in-right me-1"></i> Log in';
       }
     });
   </script>

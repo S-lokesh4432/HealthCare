@@ -5,119 +5,210 @@
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
   <title>Book Appointment - Clinic</title>
   <link href="assets/img/favicon.png" rel="icon">
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
   <link href="assets/css/main.css" rel="stylesheet">
-  <style>.slot-btn.selected{background:var(--accent-color);color:#fff}</style>
+  <link href="assets/css/portal.css" rel="stylesheet">
 </head>
-<body>
-  <header class="header fixed-top" style="position:relative">
-    <div class="branding d-flex align-items-center py-3">
-      <div class="container d-flex align-items-center justify-content-between">
-        <a href="index.html" class="logo d-flex align-items-center"><h1 class="sitename">Clinic</h1></a>
-        <nav><a href="index.html" class="me-3">Home</a></nav>
-        <div id="portal-nav" class="d-flex align-items-center"></div>
-      </div>
-    </div>
-  </header>
+<body class="portal-body">
+  <div id="portal-nav"></div>
+  <div id="heading"></div>
 
-  <main class="py-5" style="margin-top:80px">
-    <div class="container" style="max-width:640px">
-      <h2 class="mb-4">Book an appointment</h2>
+  <main class="portal-main">
+    <div class="container" style="max-width:760px">
+      <div class="portal-steps" id="steps"></div>
       <div id="alert-box"></div>
 
-      <div id="step-pick">
-        <div class="mb-3">
-          <label class="form-label">Specialization</label>
-          <select id="specialization" class="form-select"><option value="">All</option></select>
+      <!-- Step 1 -->
+      <section id="step-pick">
+        <div class="portal-card">
+          <div class="portal-card-body">
+            <h3 class="portal-card-title mb-3"><i class="bi bi-search me-2 text-primary"></i>Find a doctor</h3>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="portal-label d-block">Speciality</label>
+                <select id="specialization" class="form-select"><option value="">All specialities</option></select>
+              </div>
+              <div class="col-md-6">
+                <label class="portal-label d-block">Doctor</label>
+                <select id="doctor" class="form-select"><option value="">Select a doctor</option></select>
+              </div>
+              <div class="col-12" id="doctor-info"></div>
+              <div class="col-md-6">
+                <label class="portal-label d-block">Date</label>
+                <input type="date" id="date" class="form-control">
+              </div>
+              <div class="col-md-6 d-flex align-items-end">
+                <button id="load-slots" class="btn btn-primary w-100">
+                  <i class="bi bi-calendar-check me-1"></i> Show available times
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="mb-3">
-          <label class="form-label">Doctor</label>
-          <select id="doctor" class="form-select"><option value="">Select a doctor</option></select>
+        <div id="slots-wrap" class="mt-3"></div>
+      </section>
+
+      <!-- Step 2 -->
+      <section id="step-symptoms" class="d-none">
+        <div id="hold-timer" class="hold-timer mb-3"></div>
+        <div class="portal-card">
+          <div class="portal-card-body">
+            <h3 class="portal-card-title mb-1"><i class="bi bi-clipboard2-pulse me-2 text-primary"></i>What brings you in?</h3>
+            <p class="portal-meta mb-3">
+              Your notes go to an AI intake assistant that prepares a summary for your doctor.
+              It does not diagnose you, and your doctor reviews everything.
+            </p>
+            <div id="slot-recap" class="ai-block mb-3"></div>
+            <label class="portal-label d-block">Describe your symptoms</label>
+            <textarea id="symptom-text" class="form-control" rows="5"
+              placeholder="When did it start? How severe is it? Anything that makes it better or worse?"></textarea>
+            <div class="d-flex gap-2 mt-3">
+              <button id="confirm-btn" class="btn btn-primary">
+                <i class="bi bi-check2-circle me-1"></i> Confirm appointment
+              </button>
+              <button id="cancel-hold-btn" class="btn btn-outline-secondary">Release slot</button>
+            </div>
+          </div>
         </div>
-        <div class="mb-3">
-          <label class="form-label">Date</label>
-          <input type="date" id="date" class="form-control">
+      </section>
+
+      <!-- Step 3 -->
+      <section id="step-done" class="d-none">
+        <div class="portal-card">
+          <div class="portal-card-body text-center py-5">
+            <div class="portal-auth-icon mx-auto" style="background:linear-gradient(135deg,#22c07f,#10714a)">
+              <i class="bi bi-check-lg"></i>
+            </div>
+            <h3 class="portal-card-title" style="font-size:22px">Appointment confirmed</h3>
+            <p class="portal-meta mb-0" id="done-when"></p>
+          </div>
         </div>
-        <button id="load-slots" class="btn btn-outline-primary">Show available slots</button>
-
-        <div id="slots-wrap" class="mt-4"></div>
-      </div>
-
-      <div id="step-symptoms" class="d-none">
-        <hr class="my-4">
-        <h4>Tell us your symptoms</h4>
-        <p class="text-muted small">This goes to an AI intake assistant that gives your doctor a quick summary before your visit. It does not diagnose you.</p>
-        <div id="hold-timer" class="alert alert-warning"></div>
-        <textarea id="symptom-text" class="form-control mb-3" rows="4" placeholder="Describe what's been going on, when it started, severity..." minlength="3" required></textarea>
-        <button id="confirm-btn" class="btn btn-primary">Confirm appointment</button>
-        <button id="cancel-hold-btn" class="btn btn-link text-danger">Cancel</button>
-      </div>
-
-      <div id="step-done" class="d-none">
-        <hr class="my-4">
-        <div class="alert alert-success">Appointment confirmed.</div>
-        <div id="summary-box"></div>
-        <a href="dashboard-patient.html" class="btn btn-primary mt-3">Go to my appointments</a>
-      </div>
+        <div id="summary-box" class="mt-3"></div>
+        <div class="d-flex gap-2 mt-3">
+          <a href="dashboard-patient.html" class="btn btn-primary"><i class="bi bi-calendar2-week me-1"></i> My appointments</a>
+          <a href="book.html" class="btn btn-outline-secondary">Book another</a>
+        </div>
+      </section>
     </div>
   </main>
 
   <script src="assets/js/config.js"></script>
   <script src="assets/js/api.js"></script>
+  <script src="assets/js/portal.js"></script>
   <script>
     requireRole('PATIENT');
-    renderNav();
+    renderPortalNav();
+    document.getElementById('heading').innerHTML =
+      pageHeading('Book an appointment', 'Choose a doctor, pick a time, and tell us what is going on.');
 
     const alertBox = document.getElementById('alert-box');
     const specSelect = document.getElementById('specialization');
     const doctorSelect = document.getElementById('doctor');
     const dateInput = document.getElementById('date');
     const slotsWrap = document.getElementById('slots-wrap');
-    let doctors = [];
-    let heldAppointment = null;
-    let holdTimerInterval = null;
 
-    const todayPlus = (days) => {
+    let doctors = [];
+    let held = null;
+    let timerId = null;
+    let step = 1;
+
+    const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    function renderSteps() {
+      const labels = ['Choose a time', 'Describe symptoms', 'Confirmed'];
+      document.getElementById('steps').innerHTML = labels
+        .map((label, i) => {
+          const n = i + 1;
+          const state = step > n ? 'is-done' : step === n ? 'is-active' : '';
+          const inner = `<div class="portal-step ${state}">
+              <span class="portal-step-num">${step > n ? '<i class="bi bi-check"></i>' : n}</span>${label}
+            </div>`;
+          return i < labels.length - 1 ? inner + '<span class="portal-step-line"></span>' : inner;
+        })
+        .join('');
+    }
+
+    const plusDays = (n) => {
       const d = new Date();
-      d.setDate(d.getDate() + days);
+      d.setDate(d.getDate() + n);
       return d.toISOString().slice(0, 10);
     };
-    dateInput.min = todayPlus(0);
-    dateInput.value = todayPlus(1);
+    dateInput.min = plusDays(0);
+    dateInput.value = plusDays(1);
 
     async function loadDoctors() {
       doctors = await api('/api/doctors');
       const specs = [...new Set(doctors.map((d) => d.specialization))].sort();
-      specSelect.innerHTML = '<option value="">All</option>' + specs.map((s) => `<option>${escapeHtml(s)}</option>`).join('');
+      specSelect.innerHTML = '<option value="">All specialities</option>' +
+        specs.map((s) => `<option>${escapeHtml(s)}</option>`).join('');
       renderDoctorOptions();
     }
 
     function renderDoctorOptions() {
-      const filtered = specSelect.value ? doctors.filter((d) => d.specialization === specSelect.value) : doctors;
+      const list = specSelect.value ? doctors.filter((d) => d.specialization === specSelect.value) : doctors;
       doctorSelect.innerHTML = '<option value="">Select a doctor</option>' +
-        filtered.map((d) => `<option value="${d.id}">${escapeHtml(d.name)} — ${escapeHtml(d.specialization)}</option>`).join('');
+        list.map((d) => `<option value="${d.id}">${escapeHtml(cleanName(d.name))} — ${escapeHtml(d.specialization)}</option>`).join('');
+      renderDoctorInfo();
     }
+
+    function renderDoctorInfo() {
+      const box = document.getElementById('doctor-info');
+      const doc = doctors.find((d) => d.id === doctorSelect.value);
+      if (!doc) return (box.innerHTML = '');
+
+      const days = (doc.workingHours || [])
+        .slice()
+        .sort((a, b) => a.dayOfWeek - b.dayOfWeek)
+        .map((w) => `${DAYS[w.dayOfWeek]} ${prettyTime(w.startTime)}–${prettyTime(w.endTime)}`)
+        .join(' · ');
+
+      box.innerHTML = `<div class="ai-block d-flex align-items-center gap-3">
+        ${avatar(doc.name, 'portal-avatar-lg')}
+        <div>
+          <div class="fw-semibold">${escapeHtml(cleanName(doc.name))}</div>
+          <div class="portal-meta">${escapeHtml(doc.specialization)} · ${doc.slotDurationMinutes} min appointments</div>
+          <div class="portal-meta mt-1" style="font-size:13px"><i class="bi bi-clock"></i>${escapeHtml(days || 'Schedule not set')}</div>
+        </div>
+      </div>`;
+    }
+
     specSelect.addEventListener('change', renderDoctorOptions);
+    doctorSelect.addEventListener('change', renderDoctorInfo);
 
     document.getElementById('load-slots').addEventListener('click', async () => {
       alertBox.innerHTML = '';
-      slotsWrap.innerHTML = '';
       if (!doctorSelect.value || !dateInput.value) {
-        return showAlert(alertBox, 'Pick a doctor and a date first.');
+        return showAlert(alertBox, 'Please choose a doctor and a date first.');
       }
+      slotsWrap.innerHTML = `<div class="portal-card"><div class="portal-card-body text-center py-4">
+        <span class="spinner-border spinner-border-sm text-primary me-2"></span>
+        <span class="portal-meta">Checking availability…</span></div></div>`;
+
       try {
         const result = await api(`/api/doctors/${doctorSelect.value}/availability?date=${dateInput.value}`);
+
         if (result.onLeave) {
-          slotsWrap.innerHTML = `<div class="alert alert-info">The doctor is on leave that day${result.leaveReason ? `: ${escapeHtml(result.leaveReason)}` : ''}.</div>`;
+          slotsWrap.innerHTML = emptyState('bi-calendar-x',
+            `This doctor is on leave on ${prettyDate(dateInput.value)}${result.leaveReason ? ` (${result.leaveReason})` : ''}. Please pick another date.`);
         } else if (result.slots.length === 0) {
-          slotsWrap.innerHTML = '<div class="alert alert-info">No open slots that day.</div>';
+          slotsWrap.innerHTML = emptyState('bi-calendar-week',
+            `No open times on ${prettyDate(dateInput.value)}. Try a different day.`);
         } else {
-          slotsWrap.innerHTML = '<div class="d-flex flex-wrap gap-2">' +
-            result.slots.map((s) => `<button type="button" class="btn btn-outline-primary slot-btn" data-time="${s.startTime}">${s.startTime}</button>`).join('') +
-            '</div>';
-          slotsWrap.querySelectorAll('.slot-btn').forEach((btn) => btn.addEventListener('click', () => holdSlot(btn.dataset.time)));
+          slotsWrap.innerHTML = `<div class="portal-card"><div class="portal-card-body">
+            <h3 class="portal-card-title mb-1">${result.slots.length} available time${result.slots.length > 1 ? 's' : ''}</h3>
+            <p class="portal-meta mb-3">${prettyDate(dateInput.value)} · we will hold your choice for 7 minutes</p>
+            <div class="slot-grid">
+              ${result.slots.map((s) => `<button type="button" class="slot-btn" data-time="${s.startTime}">${prettyTime(s.startTime)}</button>`).join('')}
+            </div></div></div>`;
+          slotsWrap.querySelectorAll('.slot-btn').forEach((b) =>
+            b.addEventListener('click', () => holdSlot(b.dataset.time)));
         }
       } catch (err) {
+        slotsWrap.innerHTML = '';
         showAlert(alertBox, err.message);
       }
     });
@@ -125,76 +216,116 @@
     async function holdSlot(startTime) {
       alertBox.innerHTML = '';
       try {
-        heldAppointment = await api('/api/appointments/hold', {
+        held = await api('/api/appointments/hold', {
           method: 'POST',
           body: JSON.stringify({ doctorId: doctorSelect.value, date: dateInput.value, startTime }),
         });
+        const doc = doctors.find((d) => d.id === doctorSelect.value);
+        document.getElementById('slot-recap').innerHTML = `
+          <div class="d-flex align-items-center gap-3">
+            ${avatar(doc.name)}
+            <div>
+              <div class="fw-semibold">${escapeHtml(cleanName(doc.name))} · ${escapeHtml(doc.specialization)}</div>
+              <div class="portal-meta"><i class="bi bi-calendar3"></i>${prettyDate(held.date)}
+                <span class="ms-2"><i class="bi bi-clock"></i>${prettyTime(held.startTime)}–${prettyTime(held.endTime)}</span></div>
+            </div>
+          </div>`;
+
+        step = 2;
+        renderSteps();
         document.getElementById('step-pick').classList.add('d-none');
         document.getElementById('step-symptoms').classList.remove('d-none');
-        startHoldTimer();
+        startTimer();
+        document.getElementById('symptom-text').focus();
       } catch (err) {
         showAlert(alertBox, err.message);
+        document.getElementById('load-slots').click();
       }
     }
 
-    function startHoldTimer() {
-      const timerBox = document.getElementById('hold-timer');
-      clearInterval(holdTimerInterval);
-      holdTimerInterval = setInterval(() => {
-        const msLeft = new Date(heldAppointment.holdExpiresAt).getTime() - Date.now();
-        if (msLeft <= 0) {
-          clearInterval(holdTimerInterval);
-          timerBox.textContent = 'Your hold expired. Please pick a slot again.';
-          timerBox.className = 'alert alert-danger';
+    function startTimer() {
+      const box = document.getElementById('hold-timer');
+      clearInterval(timerId);
+      const tick = () => {
+        const left = new Date(held.holdExpiresAt).getTime() - Date.now();
+        if (left <= 0) {
+          clearInterval(timerId);
+          box.className = 'hold-timer is-expired mb-3';
+          box.innerHTML = '<i class="bi bi-x-octagon-fill"></i> Your hold expired — please choose a time again.';
           document.getElementById('confirm-btn').disabled = true;
           return;
         }
-        const mins = Math.floor(msLeft / 60000);
-        const secs = Math.floor((msLeft % 60000) / 1000);
-        timerBox.textContent = `Slot held for you: ${mins}:${String(secs).padStart(2, '0')} remaining`;
-      }, 1000);
+        const m = Math.floor(left / 60000);
+        const s = Math.floor((left % 60000) / 1000);
+        box.className = 'hold-timer mb-3';
+        box.innerHTML = `<i class="bi bi-hourglass-split"></i> Slot held for you — <strong>${m}:${String(s).padStart(2, '0')}</strong> remaining`;
+      };
+      tick();
+      timerId = setInterval(tick, 1000);
     }
 
     document.getElementById('cancel-hold-btn').addEventListener('click', async () => {
-      if (heldAppointment) await api(`/api/appointments/${heldAppointment.id}/cancel`, { method: 'POST' }).catch(() => {});
+      if (held) await api(`/api/appointments/${held.id}/cancel`, { method: 'POST' }).catch(() => {});
       window.location.reload();
     });
 
     document.getElementById('confirm-btn').addEventListener('click', async () => {
       alertBox.innerHTML = '';
       const symptomText = document.getElementById('symptom-text').value.trim();
-      if (symptomText.length < 3) return showAlert(alertBox, 'Please describe your symptoms.');
+      if (symptomText.length < 3) return showAlert(alertBox, 'Please describe your symptoms so your doctor can prepare.');
+
+      const btn = document.getElementById('confirm-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Confirming…';
 
       try {
-        const result = await api(`/api/appointments/${heldAppointment.id}/confirm`, {
+        const result = await api(`/api/appointments/${held.id}/confirm`, {
           method: 'POST',
           body: JSON.stringify({ symptomText }),
         });
-        clearInterval(holdTimerInterval);
+        clearInterval(timerId);
+        step = 3;
+        renderSteps();
         document.getElementById('step-symptoms').classList.add('d-none');
         document.getElementById('step-done').classList.remove('d-none');
+        document.getElementById('done-when').textContent =
+          `${prettyDate(result.date)} at ${prettyTime(result.startTime)}`;
 
-        const summaryBox = document.getElementById('summary-box');
-        if (result.preVisitStatus === 'FAILED') {
-          summaryBox.innerHTML = '<div class="alert alert-warning">AI summary unavailable — please review symptoms manually with your doctor.</div>';
+        const box = document.getElementById('summary-box');
+        let html = '';
+
+        if (result.preVisitStatus === 'FAILED' || !result.preVisitSummary) {
+          html += `<div class="ai-unavailable"><i class="bi bi-exclamation-triangle me-1"></i>
+            <strong>AI summary unavailable.</strong> Your booking is confirmed — your doctor will review your symptoms manually.</div>`;
         } else {
           const s = result.preVisitSummary;
-          const badge = result.preVisitStatus === 'DEGRADED' ? ' <span class="badge bg-secondary">fallback AI provider used</span>' : '';
-          summaryBox.innerHTML = `<div class="card"><div class="card-body">
-            <h5>Urgency: ${escapeHtml(s.urgency)}${badge}</h5>
-            <p>${escapeHtml(s.chiefComplaint)}</p>
-            <strong>Questions to bring up:</strong>
-            <ul>${s.suggestedQuestions.map((q) => `<li>${escapeHtml(q)}</li>`).join('')}</ul>
+          html += `<div class="portal-card"><div class="portal-card-body">
+            <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+              <h3 class="portal-card-title mb-0"><i class="bi bi-stars me-2 text-primary"></i>Prepared for your doctor</h3>
+              ${urgencyPill(s.urgency)}
+            </div>
+            ${result.preVisitStatus === 'DEGRADED' ? '<div class="portal-meta mb-2" style="font-size:12.5px"><i class="bi bi-info-circle"></i>Generated using the backup AI provider.</div>' : ''}
+            <p class="mb-3">${escapeHtml(s.chiefComplaint)}</p>
+            <div class="ai-block">
+              <h6>Questions to raise at your visit</h6>
+              <ul>${s.suggestedQuestions.map((q) => `<li>${escapeHtml(q)}</li>`).join('')}</ul>
+            </div>
           </div></div>`;
         }
+
         if (!result.notifications.emailSent) {
-          summaryBox.innerHTML += `<div class="alert alert-warning mt-2">Confirmation email could not be sent (${escapeHtml(result.notifications.emailError || 'unknown error')}). Your booking is still confirmed.</div>`;
+          html += `<div class="ai-unavailable mt-3"><i class="bi bi-envelope-slash me-1"></i>
+            Confirmation email could not be sent, but your appointment is booked.</div>`;
         }
+        box.innerHTML = html;
       } catch (err) {
         showAlert(alertBox, err.message);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> Confirm appointment';
       }
     });
 
+    renderSteps();
     loadDoctors().catch((err) => showAlert(alertBox, err.message));
   </script>
 </body>

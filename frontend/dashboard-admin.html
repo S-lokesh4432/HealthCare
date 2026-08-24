@@ -5,78 +5,105 @@
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
   <title>Admin Dashboard - Clinic</title>
   <link href="assets/img/favicon.png" rel="icon">
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
   <link href="assets/css/main.css" rel="stylesheet">
+  <link href="assets/css/portal.css" rel="stylesheet">
 </head>
-<body>
-  <header class="header fixed-top" style="position:relative">
-    <div class="branding d-flex align-items-center py-3">
-      <div class="container d-flex align-items-center justify-content-between">
-        <a href="index.html" class="logo d-flex align-items-center"><h1 class="sitename">Clinic</h1></a>
-        <nav></nav>
-        <div id="portal-nav" class="d-flex align-items-center"></div>
-      </div>
-    </div>
-  </header>
+<body class="portal-body">
+  <div id="portal-nav"></div>
+  <div id="heading"></div>
 
-  <main class="py-5" style="margin-top:80px">
-    <div class="container" style="max-width:960px">
-      <h2 class="mb-4">Admin</h2>
+  <main class="portal-main">
+    <div class="container" style="max-width:1000px">
       <div id="alert-box"></div>
+      <div id="stats" class="portal-stats"></div>
 
-      <ul class="nav nav-tabs mb-3">
-        <li class="nav-item"><button class="nav-link active" data-tab="doctors">Doctors</button></li>
-        <li class="nav-item"><button class="nav-link" data-tab="appointments">All appointments</button></li>
-        <li class="nav-item"><button class="nav-link" data-tab="notifications">Failed notifications</button></li>
-      </ul>
+      <div class="portal-tabs">
+        <button class="portal-tab active" data-tab="doctors"><i class="bi bi-people me-1"></i>Doctors</button>
+        <button class="portal-tab" data-tab="appointments"><i class="bi bi-calendar3 me-1"></i>Appointments</button>
+        <button class="portal-tab" data-tab="notifications"><i class="bi bi-envelope-exclamation me-1"></i>Failed notifications</button>
+      </div>
 
-      <div id="tab-doctors">
-        <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#newDoctorModal">+ New doctor</button>
+      <section id="tab-doctors">
+        <div class="d-flex justify-content-end mb-3">
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newDoctorModal">
+            <i class="bi bi-plus-lg me-1"></i>Add doctor
+          </button>
+        </div>
         <div id="doctor-list"></div>
-      </div>
+      </section>
 
-      <div id="tab-appointments" class="d-none">
-        <div id="appt-list"></div>
-      </div>
-
-      <div id="tab-notifications" class="d-none">
-        <div id="notif-list"></div>
-      </div>
+      <section id="tab-appointments" class="d-none"><div id="appt-list"></div></section>
+      <section id="tab-notifications" class="d-none"><div id="notif-list"></div></section>
     </div>
   </main>
 
   <div class="modal fade" id="newDoctorModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header"><h5 class="modal-title">New doctor</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content" style="border-radius:var(--portal-radius)">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title portal-card-title"><i class="bi bi-person-plus me-2 text-primary"></i>Add a doctor</h5>
+          <button class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
         <div class="modal-body">
           <div id="new-doctor-alert"></div>
-          <div class="row g-2">
-            <div class="col-6"><input id="nd-name" class="form-control" placeholder="Full name"></div>
-            <div class="col-6"><input id="nd-email" class="form-control" placeholder="Email"></div>
-            <div class="col-6"><input id="nd-password" type="password" class="form-control" placeholder="Temporary password (min 8)"></div>
-            <div class="col-6"><input id="nd-specialization" class="form-control" placeholder="Specialization"></div>
-            <div class="col-4"><input id="nd-slot" type="number" class="form-control" placeholder="Slot minutes" value="30"></div>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="portal-label d-block">Full name</label>
+              <input id="nd-name" class="form-control" placeholder="Dr. Jane Doe">
+            </div>
+            <div class="col-md-6">
+              <label class="portal-label d-block">Email</label>
+              <input id="nd-email" class="form-control" placeholder="jane@clinic.com">
+            </div>
+            <div class="col-md-6">
+              <label class="portal-label d-block">Temporary password</label>
+              <input id="nd-password" type="password" class="form-control" placeholder="min 8 characters">
+            </div>
+            <div class="col-md-4">
+              <label class="portal-label d-block">Speciality</label>
+              <input id="nd-specialization" class="form-control" placeholder="Cardiology">
+            </div>
+            <div class="col-md-2">
+              <label class="portal-label d-block">Slot (min)</label>
+              <input id="nd-slot" type="number" class="form-control" value="30">
+            </div>
           </div>
-          <hr>
-          <p class="small text-muted mb-1">Working hours</p>
+          <hr class="my-4">
+          <label class="portal-label d-block mb-2">Working hours</label>
           <div id="nd-hours"></div>
         </div>
-        <div class="modal-footer"><button id="create-doctor-btn" class="btn btn-primary">Create</button></div>
+        <div class="modal-footer border-0 pt-0">
+          <button id="create-doctor-btn" class="btn btn-primary">Create doctor</button>
+        </div>
       </div>
     </div>
   </div>
 
   <div class="modal fade" id="leaveModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header"><h5 class="modal-title">Mark leave day</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius:var(--portal-radius)">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title portal-card-title"><i class="bi bi-calendar-x me-2 text-warning"></i>Mark leave day</h5>
+          <button class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
         <div class="modal-body">
           <div id="leave-alert"></div>
-          <input type="date" id="leave-date" class="form-control mb-2">
-          <input id="leave-reason" class="form-control" placeholder="Reason (optional)">
+          <div class="ai-unavailable mb-3" style="font-size:13.5px">
+            <i class="bi bi-info-circle me-1"></i>Confirmed appointments that day are cancelled and every affected patient is notified.
+          </div>
+          <label class="portal-label d-block">Date</label>
+          <input type="date" id="leave-date" class="form-control mb-3">
+          <label class="portal-label d-block">Reason <span class="portal-meta fw-normal">(optional)</span></label>
+          <input id="leave-reason" class="form-control" placeholder="Conference, sick leave…">
         </div>
-        <div class="modal-footer"><button id="save-leave-btn" class="btn btn-primary">Save leave</button></div>
+        <div class="modal-footer border-0 pt-0">
+          <button id="save-leave-btn" class="btn btn-primary">Confirm leave</button>
+        </div>
       </div>
     </div>
   </div>
@@ -84,16 +111,25 @@
   <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script src="assets/js/config.js"></script>
   <script src="assets/js/api.js"></script>
+  <script src="assets/js/portal.js"></script>
   <script>
     requireRole('ADMIN');
-    renderNav();
+    renderPortalNav();
+    document.getElementById('heading').innerHTML =
+      pageHeading('Clinic administration', 'Doctors, schedules, leave days and delivery failures.');
+
     const alertBox = document.getElementById('alert-box');
     const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    let leaveTargetDoctorId = null;
+    let leaveDoctorId = null;
 
     document.getElementById('nd-hours').innerHTML = DAYS.map((d, i) => `
-      <div class="row g-2 mb-1 align-items-center">
-        <div class="col-2"><input type="checkbox" class="form-check-input day-toggle" data-day="${i}"> ${d}</div>
+      <div class="row g-2 mb-2 align-items-center">
+        <div class="col-4 col-md-3">
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input day-toggle" id="day-${i}" data-day="${i}" ${i >= 1 && i <= 5 ? 'checked' : ''}>
+            <label class="form-check-label" for="day-${i}">${d}</label>
+          </div>
+        </div>
         <div class="col-4"><input type="time" class="form-control form-control-sm day-start" data-day="${i}" value="09:00"></div>
         <div class="col-4"><input type="time" class="form-control form-control-sm day-end" data-day="${i}" value="17:00"></div>
       </div>`).join('');
@@ -101,34 +137,66 @@
     document.querySelectorAll('[data-tab]').forEach((btn) => btn.addEventListener('click', () => {
       document.querySelectorAll('[data-tab]').forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
-      ['doctors', 'appointments', 'notifications'].forEach((t) => document.getElementById(`tab-${t}`).classList.toggle('d-none', t !== btn.dataset.tab));
+      ['doctors', 'appointments', 'notifications'].forEach((t) =>
+        document.getElementById(`tab-${t}`).classList.toggle('d-none', t !== btn.dataset.tab));
       if (btn.dataset.tab === 'appointments') loadAppointments();
       if (btn.dataset.tab === 'notifications') loadNotifications();
     }));
 
     async function loadDoctors() {
+      const el = document.getElementById('doctor-list');
+      el.innerHTML = skeletonCards(2);
       const doctors = await api('/api/admin/doctors');
-      document.getElementById('doctor-list').innerHTML = doctors.map((d) => `
-        <div class="card mb-3"><div class="card-body">
-          <div class="d-flex justify-content-between">
-            <h5>${escapeHtml(d.user.name)} — ${escapeHtml(d.specialization)}</h5>
-            <button class="btn btn-sm btn-outline-warning" onclick="openLeave('${d.id}')">Mark leave</button>
+
+      const appts = await api('/api/admin/appointments');
+      document.getElementById('stats').innerHTML = [
+        ['bi-people', doctors.length, 'Doctors', '#e8f1ff', '#1450a8'],
+        ['bi-calendar-check', appts.filter((a) => a.status === 'CONFIRMED').length, 'Confirmed', '#e4f7ee', '#10714a'],
+        ['bi-calendar3', appts.length, 'Total appointments', '#f0eaff', '#5a30ab'],
+      ].map(([icon, value, label, bg, fg]) => `
+        <div class="portal-stat d-flex align-items-center gap-3">
+          <div class="portal-stat-icon" style="background:${bg};color:${fg}"><i class="bi ${icon}"></i></div>
+          <div><div class="portal-stat-value">${value}</div><div class="portal-stat-label">${label}</div></div>
+        </div>`).join('');
+
+      if (doctors.length === 0) return (el.innerHTML = emptyState('bi-people', 'No doctors yet.'));
+
+      el.innerHTML = doctors.map((d) => {
+        const hours = d.workingHours.map((w) => `${DAYS[w.dayOfWeek]} ${prettyTime(w.startTime)}–${prettyTime(w.endTime)}`).join(' · ');
+        return `<div class="portal-card portal-card-hover"><div class="portal-card-body">
+          <div class="d-flex align-items-start gap-3">
+            ${avatar(d.user.name, 'portal-avatar-lg')}
+            <div class="flex-grow-1 min-w-0">
+              <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <div>
+                  <h3 class="portal-card-title">${escapeHtml(cleanName(d.user.name))}</h3>
+                  <div class="portal-meta">${escapeHtml(d.user.email)}</div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="portal-pill pill-blue">${escapeHtml(d.specialization)}</span>
+                  <button class="btn btn-sm btn-outline-warning" data-leave="${d.id}"><i class="bi bi-calendar-x me-1"></i>Leave</button>
+                </div>
+              </div>
+              <div class="portal-meta mt-2"><i class="bi bi-clock"></i>${escapeHtml(hours || 'No working hours set')}</div>
+              <div class="portal-meta"><i class="bi bi-stopwatch"></i>${d.slotDurationMinutes} minute appointments</div>
+              ${d.leaves.length ? `<div class="mt-2 d-flex flex-wrap gap-2">
+                ${d.leaves.map((l) => `<span class="portal-pill pill-amber"><i class="bi bi-calendar-x"></i>${prettyDate(l.date)}</span>`).join('')}
+              </div>` : ''}
+            </div>
           </div>
-          <p class="small text-muted mb-1">${escapeHtml(d.user.email)} &middot; ${d.slotDurationMinutes} min slots</p>
-          <p class="small mb-1">${d.workingHours.map((wh) => `${DAYS[wh.dayOfWeek]} ${wh.startTime}-${wh.endTime}`).join(', ') || 'No working hours set'}</p>
-          ${d.leaves.length ? `<p class="small text-warning mb-0">Leave: ${d.leaves.map((l) => l.date.slice(0,10)).join(', ')}</p>` : ''}
-        </div></div>`).join('') || '<p class="text-muted">No doctors yet.</p>';
+        </div></div>`;
+      }).join('');
+
+      el.querySelectorAll('[data-leave]').forEach((b) => b.addEventListener('click', () => openLeave(b.dataset.leave)));
     }
 
     document.getElementById('create-doctor-btn').addEventListener('click', async () => {
-      const modalAlert = document.getElementById('new-doctor-alert');
-      const workingHours = [...document.querySelectorAll('.day-toggle')]
-        .filter((cb) => cb.checked)
-        .map((cb) => ({
-          dayOfWeek: Number(cb.dataset.day),
-          startTime: document.querySelector(`.day-start[data-day="${cb.dataset.day}"]`).value,
-          endTime: document.querySelector(`.day-end[data-day="${cb.dataset.day}"]`).value,
-        }));
+      const a = document.getElementById('new-doctor-alert');
+      const workingHours = [...document.querySelectorAll('.day-toggle')].filter((cb) => cb.checked).map((cb) => ({
+        dayOfWeek: Number(cb.dataset.day),
+        startTime: document.querySelector(`.day-start[data-day="${cb.dataset.day}"]`).value,
+        endTime: document.querySelector(`.day-end[data-day="${cb.dataset.day}"]`).value,
+      }));
 
       try {
         await api('/api/admin/doctors', {
@@ -143,62 +211,70 @@
           }),
         });
         bootstrap.Modal.getInstance(document.getElementById('newDoctorModal')).hide();
+        showAlert(alertBox, 'Doctor created.', 'success');
         loadDoctors();
-      } catch (err) {
-        showAlert(modalAlert, err.message);
-      }
+      } catch (err) { showAlert(a, err.message); }
     });
 
-    function openLeave(doctorId) {
-      leaveTargetDoctorId = doctorId;
+    function openLeave(id) {
+      leaveDoctorId = id;
       document.getElementById('leave-alert').innerHTML = '';
       document.getElementById('leave-date').value = '';
       document.getElementById('leave-reason').value = '';
       new bootstrap.Modal(document.getElementById('leaveModal')).show();
     }
-    window.openLeave = openLeave;
 
     document.getElementById('save-leave-btn').addEventListener('click', async () => {
-      const leaveAlert = document.getElementById('leave-alert');
+      const a = document.getElementById('leave-alert');
       const date = document.getElementById('leave-date').value;
-      if (!date) return showAlert(leaveAlert, 'Pick a date.');
+      if (!date) return showAlert(a, 'Please pick a date.');
       try {
-        const result = await api(`/api/admin/doctors/${leaveTargetDoctorId}/leave`, {
+        const r = await api(`/api/admin/doctors/${leaveDoctorId}/leave`, {
           method: 'POST',
           body: JSON.stringify({ date, reason: document.getElementById('leave-reason').value || undefined }),
         });
         bootstrap.Modal.getInstance(document.getElementById('leaveModal')).hide();
-        showAlert(alertBox, `Leave recorded. ${result.cancelledAppointments} appointment(s) cancelled, ${result.patientsNotified} patient(s) notified, ${result.notificationsFailed} notification(s) failed.`, result.notificationsFailed > 0 ? 'warning' : 'success');
+        showAlert(alertBox,
+          `Leave recorded. ${r.cancelledAppointments} appointment(s) cancelled · ${r.patientsNotified} patient(s) notified · ${r.notificationsFailed} notification(s) failed.`,
+          r.notificationsFailed > 0 ? 'warning' : 'success');
         loadDoctors();
-      } catch (err) {
-        showAlert(leaveAlert, err.message);
-      }
+      } catch (err) { showAlert(a, err.message); }
     });
 
     async function loadAppointments() {
-      const appointments = await api('/api/admin/appointments');
-      document.getElementById('appt-list').innerHTML = `
-        <table class="table table-sm"><thead><tr><th>Date</th><th>Time</th><th>Patient</th><th>Doctor</th><th>Status</th></tr></thead><tbody>
-        ${appointments.map((a) => `<tr>
-          <td>${a.date.slice(0,10)}</td><td>${a.startTime}</td>
-          <td>${escapeHtml(a.patient.name)}</td>
-          <td>${escapeHtml(a.doctor.user.name)}</td>
-          <td>${a.status}</td>
-        </tr>`).join('')}
-        </tbody></table>` || '<p class="text-muted">No appointments.</p>';
+      const el = document.getElementById('appt-list');
+      el.innerHTML = skeletonCards(1);
+      const rows = await api('/api/admin/appointments');
+      if (rows.length === 0) return (el.innerHTML = emptyState('bi-calendar3', 'No appointments booked yet.'));
+
+      el.innerHTML = `<div class="portal-table-wrap"><table class="portal-table">
+        <thead><tr><th>Date</th><th>Time</th><th>Patient</th><th>Doctor</th><th>Status</th></tr></thead>
+        <tbody>${rows.map((a) => `<tr>
+          <td>${prettyDate(a.date)}</td>
+          <td>${prettyTime(a.startTime)}</td>
+          <td>${escapeHtml(cleanName(a.patient.name))}</td>
+          <td>${escapeHtml(cleanName(a.doctor.user.name))}<div class="portal-meta" style="font-size:12.5px">${escapeHtml(a.doctor.specialization)}</div></td>
+          <td>${statusPill(a.status)}</td></tr>`).join('')}</tbody></table></div>`;
     }
 
     async function loadNotifications() {
+      const el = document.getElementById('notif-list');
+      el.innerHTML = skeletonCards(1);
       const logs = await api('/api/admin/notifications?failed=true');
-      document.getElementById('notif-list').innerHTML = logs.length ? `
-        <table class="table table-sm"><thead><tr><th>To</th><th>Type</th><th>Status</th><th>Retries</th><th>Last error</th></tr></thead><tbody>
-        ${logs.map((l) => `<tr>
-          <td>${escapeHtml(l.recipient)}</td><td>${l.type}</td>
-          <td><span class="badge bg-${l.status === 'PERMANENTLY_FAILED' ? 'danger' : 'warning'}">${l.status}</span></td>
+      if (logs.length === 0) {
+        return (el.innerHTML = emptyState('bi-check2-circle', 'No failed notifications — everything has been delivered.'));
+      }
+
+      el.innerHTML = `<div class="portal-table-wrap"><table class="portal-table">
+        <thead><tr><th>Recipient</th><th>Type</th><th>Status</th><th>Retries</th><th>Last error</th></tr></thead>
+        <tbody>${logs.map((l) => `<tr>
+          <td>${escapeHtml(l.recipient)}</td>
+          <td><span class="portal-pill pill-grey">${escapeHtml(l.type.replace(/_/g, ' ').toLowerCase())}</span></td>
+          <td><span class="portal-pill ${l.status === 'PERMANENTLY_FAILED' ? 'pill-red' : 'pill-amber'}">
+            ${l.status === 'PERMANENTLY_FAILED' ? 'Gave up' : 'Retrying'}</span></td>
           <td>${l.retryCount}/${l.maxRetries}</td>
-          <td class="small">${escapeHtml(l.lastError || '')}</td>
-        </tr>`).join('')}
-        </tbody></table>` : '<p class="text-muted">No failed notifications.</p>';
+          <td class="portal-meta" style="max-width:280px">${escapeHtml(l.lastError || '')}</td>
+        </tr>`).join('')}</tbody></table></div>`;
     }
 
     loadDoctors().catch((err) => showAlert(alertBox, err.message));
