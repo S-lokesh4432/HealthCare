@@ -84,6 +84,32 @@ describe('§4.4 doctor leave conflict handling', () => {
     );
   });
 
+  it('resolves concurrent leave requests for the same day to exactly one success, not a 500', async () => {
+    const date = futureDate(65);
+    const doctor = await createDoctor();
+    created.push(doctor.profile.id);
+
+    const results = await Promise.allSettled(
+      Array.from({ length: 5 }, () => applyLeave(doctor.profile.id, parseDateOnly(date), 'Race test'))
+    );
+
+    const fulfilled = results.filter((r) => r.status === 'fulfilled');
+    const rejected = results.filter(
+      (r): r is PromiseRejectedResult => r.status === 'rejected'
+    );
+
+    expect(fulfilled).toHaveLength(1);
+    expect(rejected).toHaveLength(4);
+    for (const r of rejected) {
+      expect(r.reason.message).toContain('Leave already recorded');
+    }
+
+    const leaves = await prisma.leave.findMany({
+      where: { doctorId: doctor.profile.id, date: parseDateOnly(date) },
+    });
+    expect(leaves).toHaveLength(1);
+  });
+
   it('reports affected counts to the admin rather than a bare success', async () => {
     const date = futureDate(62);
     const doctor = await createDoctor();

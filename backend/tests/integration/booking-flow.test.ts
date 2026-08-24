@@ -277,6 +277,51 @@ describe('§5 post-visit notes and prescriptions', () => {
     expect(edited.body.postVisitSummary.summary).toBe('Doctor-reviewed wording.');
   });
 
+  it('rejects a second notes submission instead of duplicating prescriptions and reminders', async () => {
+    const { doctor, patient, date } = await setup();
+
+    const held = await request(app)
+      .post('/api/appointments/hold')
+      .set('Authorization', `Bearer ${patient.token}`)
+      .send({ doctorId: doctor.profile.id, date, startTime: '11:00' });
+
+    await request(app)
+      .post(`/api/appointments/${held.body.id}/confirm`)
+      .set('Authorization', `Bearer ${patient.token}`)
+      .send({ symptomText: 'Follow-up visit for medication review' });
+
+    const rx = {
+      medicationName: 'Amoxicillin',
+      dosage: '500mg',
+      frequencyPerDay: 2,
+      durationDays: 3,
+    };
+
+    const first = await request(app)
+      .post(`/api/appointments/${held.body.id}/notes`)
+      .set('Authorization', `Bearer ${doctor.token}`)
+      .send({ postVisitNotes: 'First submission.', prescriptions: [rx] });
+    expect(first.status).toBe(200);
+
+    const second = await request(app)
+      .post(`/api/appointments/${held.body.id}/notes`)
+      .set('Authorization', `Bearer ${doctor.token}`)
+      .send({ postVisitNotes: 'Accidental double-click resubmission.', prescriptions: [rx] });
+
+    expect(second.status).toBe(409);
+    expect(second.body.code).toBe('ALREADY_COMPLETED');
+
+    const prescriptions = await prisma.prescription.findMany({
+      where: { appointmentId: held.body.id },
+    });
+    expect(prescriptions).toHaveLength(1);
+
+    const reminders = await prisma.medicationReminder.findMany({
+      where: { prescription: { appointmentId: held.body.id } },
+    });
+    expect(reminders).toHaveLength(6);
+  });
+
   it("blocks a doctor from writing notes on another doctor's appointment", async () => {
     const { doctor, patient, date } = await setup();
     const other = await createDoctor();

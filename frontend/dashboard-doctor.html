@@ -59,6 +59,8 @@
           <div id="summary-modal-alert"></div>
           <label class="form-label">Summary text (editable)</label>
           <textarea id="summary-text" class="form-control mb-3" rows="4"></textarea>
+          <label class="form-label">Medication schedule (one "drug: schedule" per line)</label>
+          <textarea id="summary-medication" class="form-control mb-3" rows="3"></textarea>
           <label class="form-label">Follow-up steps (one per line)</label>
           <textarea id="summary-followup" class="form-control mb-3" rows="3"></textarea>
         </div>
@@ -77,7 +79,6 @@
     renderNav();
     const alertBox = document.getElementById('alert-box');
     let currentAppointmentId = null;
-    let currentSummary = null;
 
     function statusBadge(status) {
       const map = { CONFIRMED: 'primary', HELD: 'warning', CANCELLED: 'secondary', COMPLETED: 'success', NO_SHOW: 'dark', EXPIRED: 'secondary' };
@@ -88,8 +89,13 @@
       return `<span class="badge bg-${map[u] || 'secondary'}">${u} urgency</span>`;
     }
 
+    const appointmentsById = new Map();
+
     async function load() {
       const appointments = await api('/api/appointments/mine');
+      appointmentsById.clear();
+      appointments.forEach((a) => appointmentsById.set(a.id, a));
+
       const list = document.getElementById('list');
       if (appointments.length === 0) {
         list.innerHTML = '<p class="text-muted">No appointments yet.</p>';
@@ -111,7 +117,7 @@
                 : ''}
             ${a.symptomText ? `<p class="small text-muted">Patient-reported: ${escapeHtml(a.symptomText)}</p>` : ''}
             ${a.status === 'CONFIRMED' ? `<button class="btn btn-sm btn-primary" onclick="openNotes('${a.id}')">Add visit notes</button>` : ''}
-            ${a.status === 'COMPLETED' && a.postVisitSummary ? `<button class="btn btn-sm btn-outline-primary" onclick='openSummary("${a.id}", ${JSON.stringify(a.postVisitSummary).replace(/'/g, "&apos;")})'>Review AI summary</button>` : ''}
+            ${a.status === 'COMPLETED' && a.postVisitSummary ? `<button class="btn btn-sm btn-outline-primary" onclick="openSummary('${a.id}')">Review AI summary</button>` : ''}
             ${a.status === 'COMPLETED' && a.postVisitStatus === 'FAILED' ? '<div class="alert alert-warning py-1 px-2 mt-2">Post-visit AI summary unavailable — write one manually via Review.</div>' : ''}
           </div>
         </div>
@@ -171,13 +177,15 @@
       }
     });
 
-    function openSummary(id, summary) {
+    function openSummary(id) {
+      const appointment = appointmentsById.get(id);
+      const summary = appointment?.postVisitSummary;
       currentAppointmentId = id;
       currentSummary = summary;
       document.getElementById('summary-modal-alert').innerHTML = '';
       document.getElementById('summary-text').value = summary?.summary || '';
-      document.getElementById('summary-followup').value = (summary?.medicationSchedule || [])
-        .map((m) => `${m.medication}: ${m.schedule}`).join('\n') || '';
+      document.getElementById('summary-medication').value = (summary?.medicationSchedule || [])
+        .map((m) => `${m.medication}: ${m.schedule}`).join('\n');
       document.getElementById('summary-followup').value = (summary?.followUpSteps || []).join('\n');
       new bootstrap.Modal(document.getElementById('summaryModal')).show();
     }
@@ -185,9 +193,18 @@
     window.openNotes = openNotes;
 
     function collectSummaryEdits() {
+      const medicationSchedule = document.getElementById('summary-medication').value
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => {
+          const [medication, ...rest] = line.split(':');
+          return { medication: medication.trim(), schedule: rest.join(':').trim() || medication.trim() };
+        });
+
       return {
         summary: document.getElementById('summary-text').value.trim(),
-        medicationSchedule: currentSummary?.medicationSchedule || [],
+        medicationSchedule,
         followUpSteps: document.getElementById('summary-followup').value.split('\n').map((s) => s.trim()).filter(Boolean),
       };
     }

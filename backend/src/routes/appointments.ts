@@ -292,6 +292,14 @@ router.post(
     if (appointment.status === AppointmentStatus.CANCELLED) {
       throw conflict('Cannot add notes to a cancelled appointment', 'APPOINTMENT_CANCELLED');
     }
+    if (appointment.status === AppointmentStatus.COMPLETED) {
+      // Without this, a double-click (or a retried request) would create a
+      // second set of prescriptions and double-schedule medication reminders.
+      throw conflict(
+        'This visit already has notes. Edit the summary instead of resubmitting.',
+        'ALREADY_COMPLETED'
+      );
+    }
 
     const summary = await generatePostVisitSummary(body.postVisitNotes);
 

@@ -1,9 +1,11 @@
 import { NextFunction, Request, Response } from 'express';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import { env, featureStatus } from './lib/env';
 import { prisma } from './lib/prisma';
 import { ApiError } from './lib/errors';
+import { authLimiter, globalLimiter } from './middleware/rateLimit';
 import authRoutes from './routes/auth';
 import adminRoutes from './routes/admin';
 import doctorRoutes from './routes/doctors';
@@ -13,8 +15,16 @@ import cronRoutes from './routes/cron';
 
 const app = express();
 
+// Vercel (and most PaaS) terminate TLS at a proxy in front of the app;
+// without this, express-rate-limit keys every request off the proxy's IP
+// instead of the client's, collapsing the whole limit onto one bucket.
+app.set('trust proxy', 1);
+
+app.use(helmet());
 app.use(cors({ origin: env.corsOrigin === '*' ? true : env.corsOrigin.split(',') }));
 app.use(express.json({ limit: '1mb' }));
+app.use('/api', globalLimiter);
+app.use('/api/auth', authLimiter);
 
 app.get('/health', async (_req: Request, res: Response) => {
   try {
